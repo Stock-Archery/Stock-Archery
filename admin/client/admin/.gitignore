@@ -1,0 +1,41 @@
+# Flutter/Dart related
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Android related
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+
+# iOS/macOS related
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/**/xcshareddata/WorkspaceSettings.xcsettings
+**/ios/**/xcuserdata/
+**/ios/**/DerivedData/
+**/ios/**/Icon?
+
+# Web related
+.web/
+
+# IDE specific (optional but recommended)
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Sensitive information (e.g., Firebase keys, Keystores)
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
