@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = 3000;
-const MONGO_URI = "mongodb+srv://harsh:whateveridc@cluster0.d4gsz5f.mongodb.net/stock_archery?appName=Cluster0";
+const MONGO_URI = process.env.mongoUri;
 const DATA_URL = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz";
 
 // Connect to MongoDB

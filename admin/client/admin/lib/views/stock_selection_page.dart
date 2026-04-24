@@ -21,6 +21,20 @@ class StockSelectionPage extends StatelessWidget {
           'Select 5 Stocks',
           style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
         ),
+        actions: [
+          Consumer<StockViewModel>(
+            builder: (context, viewModel, child) {
+              return IconButton(
+                onPressed: viewModel.isLoading ? null : () => viewModel.refreshFnoStocks(),
+                icon: viewModel.isLoading 
+                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.refresh_rounded, color: Colors.white70),
+                tooltip: 'Refresh F&O List',
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Consumer<StockViewModel>(
         builder: (context, viewModel, child) {

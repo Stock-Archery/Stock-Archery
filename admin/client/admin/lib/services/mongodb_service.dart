@@ -1,4 +1,7 @@
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
 
 class MongoDBService {
   static final MongoDBService _instance = MongoDBService._internal();
@@ -7,10 +10,11 @@ class MongoDBService {
 
   Db? _db;
   
-  // Replace with your MongoDB Atlas connection string
-  // Format: mongodb+srv://<username>:<password>@cluster.mongodb.net/stock_archery?retryWrites=true&w=majority
-  static const String mongoUri = "mongodb+srv://harsh:whateveridc@cluster0.d4gsz5f.mongodb.net/?appName=Cluster0";
+  // Use environment variables for sensitive data
+  static String get mongoUri => dotenv.get('mongoUri', fallback: '');
   static const String collectionName = "recommendations";
+  static const String fnoCollectionName = "fnostocks";
+  static const String serverUrl = "http://10.16.4.230:3000"; // Update this for production
 
   Future<void> connect() async {
     if (_db != null && _db!.isConnected) return;
@@ -50,6 +54,24 @@ class MongoDBService {
       return List<String>.from(doc['stocks']);
     }
     return [];
+  }
+
+  Future<List<String>> getFnoStocks() async {
+    await connect();
+    final collection = _db!.collection(fnoCollectionName);
+    final docs = await collection.find().toList();
+    
+    return docs.map((doc) => doc['symbol'] as String).toList();
+  }
+
+  Future<bool> triggerRefresh() async {
+    try {
+      final response = await http.post(Uri.parse('$serverUrl/refresh-fno'));
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error triggering refresh: $e");
+      return false;
+    }
   }
 
   Future<void> close() async {
