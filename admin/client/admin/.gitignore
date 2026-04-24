@@ -26,6 +26,7 @@
 
 # Web related
 .web/
+.env
 
 # IDE specific (optional but recommended)
 .idea/
