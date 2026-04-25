@@ -1,4 +1,5 @@
-import 'package:mongo_dart/mongo_dart.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class StocksService {
@@ -6,41 +7,20 @@ class StocksService {
   factory StocksService() => _instance;
   StocksService._internal();
 
-  Db? _db;
-  
-  static String get mongoUri => dotenv.get('mongoUri', fallback: '');
-  static const String collectionName = "recommendations";
-
-  Future<void> connect() async {
-    if (_db != null && _db!.isConnected) return;
-    
-    try {
-      _db = await Db.create(mongoUri);
-      await _db!.open();
-      print("Connected to MongoDB Atlas");
-    } catch (e) {
-      print("Error connecting to MongoDB: $e");
-    }
-  }
+  static String get baseUrl => dotenv.get('BASE_URL', fallback: 'http://10.16.4.230:5000');
 
   Future<List<String>> getRecommendations() async {
     try {
-      await connect();
-      if (_db == null) return [];
+      final response = await http.get(Uri.parse('$baseUrl/recommendations'));
       
-      final collection = _db!.collection(collectionName);
-      final doc = await collection.findOne(where.eq('type', 'current_recommendations'));
-      
-      if (doc != null && doc['stocks'] != null) {
-        return List<String>.from(doc['stocks']);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return List<String>.from(data);
+      } else {
+        throw Exception("Failed to load recommendations: ${response.statusCode}");
       }
     } catch (e) {
-      print("Error fetching recommendations: $e");
+      throw Exception("Error connecting to server: $e");
     }
-    return [];
-  }
-
-  Future<void> close() async {
-    await _db?.close();
   }
 }
