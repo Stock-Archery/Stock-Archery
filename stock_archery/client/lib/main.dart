@@ -1,8 +1,13 @@
-import 'package:client/Features/Home/Home_screen.dart';
-import 'package:flutter/material.dart'; // Import your newly enhanced HomeScreen
+import 'package:client/views/main_navigation_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -28,14 +33,11 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Study App',
+      title: 'Stock Archery',
       theme: ThemeData.light(useMaterial3: true),
       darkTheme: ThemeData.dark(useMaterial3: true),
       themeMode: _themeMode, // Applies the current theme
-      home: HomeScreen(
-        toggleTheme: _toggleTheme,
-        isDarkMode: _themeMode == ThemeMode.dark,
-      ),
+      home: const MainNavigationScreen(),
     );
   }
 }
