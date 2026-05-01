@@ -11,7 +11,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+    res.json({ status: "ok", message: "Stock Archery Server is running" });
+});
 const MONGO_URI = process.env.mongoUri;
 const DATA_URL = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz";
 

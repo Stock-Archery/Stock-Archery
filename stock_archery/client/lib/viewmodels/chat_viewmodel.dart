@@ -21,7 +21,7 @@ class ChatViewModel extends StateNotifier<List<ChatMessage>> {
   ChatUser get user => _user;
   ChatUser get gemini => _gemini;
 
-  static String get baseUrl => dotenv.get('BASE_URL', fallback: 'http://10.16.4.230:5000');
+  static String get baseUrl => dotenv.get('BASE_URL', fallback: 'http://localhost:3000/api');
 
   void onSend(ChatMessage message) async {
     state = [message, ...state];

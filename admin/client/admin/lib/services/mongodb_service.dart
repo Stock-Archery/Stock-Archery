@@ -11,10 +11,12 @@ class MongoDBService {
   Db? _db;
   
   // Use environment variables for sensitive data
+  // WARNING: Connecting directly to MongoDB from a mobile client is insecure.
+  // In production, all database operations should be moved to the backend server.
   static String get mongoUri => dotenv.get('mongoUri', fallback: '');
   static const String collectionName = "recommendations";
   static const String fnoCollectionName = "fnostocks";
-  static const String serverUrl = "http://10.16.4.230:3000"; // Update this for production
+  static String get serverUrl => dotenv.get('SERVER_URL', fallback: 'http://localhost:3000');
 
   Future<void> connect() async {
     if (_db != null && _db!.isConnected) return;

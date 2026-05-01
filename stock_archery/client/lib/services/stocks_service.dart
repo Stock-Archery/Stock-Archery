@@ -7,7 +7,7 @@ class StocksService {
   factory StocksService() => _instance;
   StocksService._internal();
 
-  static String get baseUrl => dotenv.get('BASE_URL', fallback: 'http://10.16.4.230:5000');
+  static String get baseUrl => dotenv.get('BASE_URL', fallback: 'http://localhost:3000/api');
 
   Future<List<String>> getRecommendations() async {
     try {
