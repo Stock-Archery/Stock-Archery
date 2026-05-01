@@ -10,8 +10,21 @@ class StockViewModel extends ChangeNotifier {
   List<String> _selectedStocks = [];
   List<String> get selectedStocks => _selectedStocks;
 
+  List<String> _currentLiveStocks = [];
+  List<String> get currentLiveStocks => _currentLiveStocks;
+
   List<String> _allStocks = [];
   List<String> get allStocks => _allStocks;
+
+  String _searchQuery = "";
+  String get searchQuery => _searchQuery;
+
+  List<String> get filteredStocks {
+    if (_searchQuery.isEmpty) return _allStocks;
+    return _allStocks
+        .where((stock) => stock.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+  }
 
   StockViewModel() {
     loadAllStocks();
@@ -22,7 +35,9 @@ class StockViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
+      print("Attempting to load FNO stocks from: ${MongoDBService.mongoUri}");
       _allStocks = await _mongoService.getFnoStocks();
+      print("Successfully loaded ${_allStocks.length} stocks.");
     } catch (e) {
       print("Error loading FNO stocks: $e");
     } finally {
@@ -54,13 +69,25 @@ class StockViewModel extends ChangeNotifier {
     notifyListeners();
     
     try {
-      _selectedStocks = await _mongoService.getRecommendations();
+      _currentLiveStocks = await _mongoService.getRecommendations();
+      // We keep _selectedStocks empty initially for a fresh selection UX
+      _selectedStocks = []; 
     } catch (e) {
       print("Error loading recommendations: $e");
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  void clearSelections() {
+    _selectedStocks = [];
+    notifyListeners();
+  }
+
+  void copyCurrentToSelection() {
+    _selectedStocks = List.from(_currentLiveStocks);
+    notifyListeners();
   }
 
   void toggleStockSelection(String stock) {
@@ -74,6 +101,11 @@ class StockViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
+
   Future<bool> saveRecommendations() async {
     if (_selectedStocks.length != 5) return false;
     
@@ -82,6 +114,8 @@ class StockViewModel extends ChangeNotifier {
     
     try {
       await _mongoService.updateRecommendations(_selectedStocks);
+      _currentLiveStocks = List.from(_selectedStocks);
+      _selectedStocks = [];
       _isLoading = false;
       notifyListeners();
       return true;
