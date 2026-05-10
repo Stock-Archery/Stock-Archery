@@ -24,7 +24,7 @@ class StocksView extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Color(0xFF6366F1)),
-            onPressed: () => ref.refresh(recommendationsProvider),
+            onPressed: () => ref.invalidate(recommendationsProvider),
           ),
           const SizedBox(width: 8),
         ],
