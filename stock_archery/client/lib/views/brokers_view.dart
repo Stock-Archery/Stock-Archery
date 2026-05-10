@@ -178,7 +178,8 @@ class _BrokersViewState extends State<BrokersView> {
               _buildBrokerCard(
                 context,
                 name: "Fyers",
-                reward: "₹300",
+                logoAsset: "assets/logos/fyers.jpeg",
+                reward: "₹ 0",
                 description: "Fast execution, advanced charts & trading tools.",
                 color: const Color(0xFF2563EB),
                 isPopular: true,
@@ -188,7 +189,9 @@ class _BrokersViewState extends State<BrokersView> {
               _buildBrokerCard(
                 context,
                 name: "CoinDCX",
-                reward: "₹200",
+                logoAsset: "assets/logos/coindcx.png",
+                isWide: true,
+                reward: "₹ 0",
                 description: "India's safest crypto exchange with 500+ assets.",
                 color: const Color(0xFFF97316),
                 isDark: isDark,
@@ -197,7 +200,9 @@ class _BrokersViewState extends State<BrokersView> {
               _buildBrokerCard(
                 context,
                 name: "Angel One",
-                reward: "₹250",
+                logoAsset: "assets/logos/angelone.png",
+                isWide: true,
+                reward: "₹ 0",
                 description: "Zero brokerage on delivery & simple interface.",
                 color: const Color(0xFF3B82F6),
                 isDark: isDark,
@@ -206,7 +211,8 @@ class _BrokersViewState extends State<BrokersView> {
               _buildBrokerCard(
                 context,
                 name: "Dhan",
-                reward: "₹300",
+                logoAsset: "assets/logos/dhan.jpeg",
+                reward: "₹ 0",
                 description: "Lightning fast trading experience for pros.",
                 color: const Color(0xFF22C55E),
                 isDark: isDark,
@@ -215,7 +221,8 @@ class _BrokersViewState extends State<BrokersView> {
               _buildBrokerCard(
                 context,
                 name: "Upstox",
-                reward: "₹200",
+                logoAsset: "assets/logos/upstox.jpeg",
+                reward: "₹ 0",
                 description: "Reliable platform with advanced analytics.",
                 color: const Color(0xFF9333EA),
                 isDark: isDark,
@@ -311,10 +318,12 @@ class _BrokersViewState extends State<BrokersView> {
   Widget _buildBrokerCard(
     BuildContext context, {
     required String name,
+    required String logoAsset,
     required String reward,
     required String description,
     required Color color,
     bool isPopular = false,
+    bool isWide = false,
     required bool isDark,
     required VoidCallback onTap,
   }) {
@@ -344,19 +353,26 @@ class _BrokersViewState extends State<BrokersView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 48,
+                      width: isWide ? 85 : 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: color,
+                        color: isWide ? Colors.transparent : color,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Center(
-                        child: Text(
-                          name[0],
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          logoAsset,
+                          fit: isWide ? BoxFit.contain : BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Center(
+                            child: Text(
+                              name[0],
+                              style: GoogleFonts.inter(
+                                color: isWide ? color : Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                           ),
                         ),
                       ),
