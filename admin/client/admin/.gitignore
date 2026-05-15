@@ -34,6 +34,7 @@
 *.iml
 *.ipr
 *.iws
+.env
 
 # Sensitive information (e.g., Firebase keys, Keystores)
 *.jks
