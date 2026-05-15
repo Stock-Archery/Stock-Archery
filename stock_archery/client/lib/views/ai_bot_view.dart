@@ -1,6 +1,7 @@
 import 'package:client/viewmodels/chat_viewmodel.dart';
 import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -51,11 +52,28 @@ class AiBotView extends ConsumerWidget {
           currentUserContainerColor: Colors.grey[200],
           currentUserTextColor: Colors.black,
           messageTextBuilder: (message, previousMessage, nextMessage) {
-            return Text(
-              message.text,
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                color: message.user.id == viewModel.user.id ? Colors.black : Colors.white,
+            final isUser = message.user.id == viewModel.user.id;
+            return MarkdownBody(
+              data: message.text,
+              styleSheet: MarkdownStyleSheet(
+                p: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: isUser ? Colors.black : Colors.white,
+                ),
+                strong: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: isUser ? Colors.black : Colors.white,
+                ),
+                a: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: isUser ? Colors.blue : Colors.blueAccent[100],
+                  decoration: TextDecoration.underline,
+                ),
+                listBullet: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: isUser ? Colors.black : Colors.white,
+                ),
               ),
             );
           },
