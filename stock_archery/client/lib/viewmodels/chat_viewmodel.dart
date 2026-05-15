@@ -1,15 +1,24 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:image_picker/image_picker.dart';
 
+// Provider for General Text Analysis
 final chatProvider = StateNotifierProvider<ChatViewModel, List<ChatMessage>>((ref) {
-  return ChatViewModel();
+  return ChatViewModel(isChart: false);
+});
+
+// Provider for Chart Analysis
+final chartProvider = StateNotifierProvider<ChatViewModel, List<ChatMessage>>((ref) {
+  return ChatViewModel(isChart: true);
 });
 
 class ChatViewModel extends StateNotifier<List<ChatMessage>> {
-  ChatViewModel() : super([]);
+  final bool isChart;
+  ChatViewModel({required this.isChart}) : super([]);
 
   final ChatUser _user = ChatUser(id: '1', firstName: 'User');
   final ChatUser _gemini = ChatUser(
@@ -23,20 +32,31 @@ class ChatViewModel extends StateNotifier<List<ChatMessage>> {
 
   static String get baseUrl => dotenv.get('BASE_URL', fallback: 'http://192.168.1.3:5000/api');
 
-  void onSend(ChatMessage message) async {
+  void onSend(ChatMessage message, {XFile? imageFile}) async {
     state = [message, ...state];
 
     try {
+      final endpoint = isChart ? '/chart-analysis' : '/chat';
+      
+      Map<String, dynamic> body = {
+        'message': message.text,
+      };
+
+      if (isChart && imageFile != null) {
+        final bytes = await File(imageFile.path).readAsBytes();
+        body['image'] = base64Encode(bytes);
+      }
+
       final response = await http.post(
-        Uri.parse('$baseUrl/chat'),
+        Uri.parse('$baseUrl$endpoint'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'message': message.text}),
+        body: json.encode(body),
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final reply = data['reply'];
-        // print(baseUrl);
+        
         final botMessage = ChatMessage(
           text: reply,
           user: _gemini,
