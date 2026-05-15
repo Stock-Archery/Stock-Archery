@@ -146,7 +146,12 @@ app.post('/api/chat', async (req, res) => {
         input: [
           {
             "role": "user",
-            "content": message
+            "content": [
+              {
+                "type": "input_text",
+                "text": message
+              }
+            ]
           }
         ],
         tools: [
@@ -210,14 +215,12 @@ app.post('/api/chart-analysis', async (req, res) => {
             "role": "user",
             "content": [
               {
-                "type": "text",
+                "type": "input_text",
                 "text": message
               },
               {
-                "type": "image_url",
-                "image_url": {
-                  "url": `data:image/jpeg;base64,${image}`
-                }
+                "type": "input_image",
+                "image": `data:image/jpeg;base64,${image}`
               }
             ]
           }
