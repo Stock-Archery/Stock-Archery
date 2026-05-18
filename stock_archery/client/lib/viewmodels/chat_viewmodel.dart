@@ -31,6 +31,7 @@ class ChatViewModel extends StateNotifier<List<ChatMessage>> {
   ChatUser get gemini => _gemini;
 
   static String get baseUrl => dotenv.get('BASE_URL', fallback: 'http://192.168.1.3:5000/api');
+  // static String get baseUrl => 'http://192.168.1.3:5000/api';
 
   void onSend(ChatMessage message, {XFile? imageFile}) async {
     state = [message, ...state];

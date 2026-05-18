@@ -220,7 +220,9 @@ app.post('/api/chart-analysis', async (req, res) => {
               },
               {
                 "type": "input_image",
-                "image": `data:image/jpeg;base64,${image}`
+                "image_url": 
+                  `data:image/jpeg;base64,${image}`
+                
               }
             ]
           }
