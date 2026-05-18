@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
+import '../services/app_config.dart';
 
 // Provider for General Text Analysis
 final chatProvider = StateNotifierProvider<ChatViewModel, List<ChatMessage>>((ref) {
@@ -30,8 +31,7 @@ class ChatViewModel extends StateNotifier<List<ChatMessage>> {
   ChatUser get user => _user;
   ChatUser get gemini => _gemini;
 
-  static String get baseUrl => dotenv.get('BASE_URL', fallback: 'http://192.168.1.3:5000/api');
-  // static String get baseUrl => 'http://192.168.1.3:5000/api';
+  static String get baseUrl => AppConfig.baseUrl;
 
   void onSend(ChatMessage message, {XFile? imageFile}) async {
     state = [message, ...state];

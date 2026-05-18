@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const axios = require('axios');
+const admin = require('firebase-admin');
 
 dotenv.config();
 
@@ -11,9 +12,22 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-
-
 const PORT = process.env.PORT || 5000;
+
+// Initialize Firebase Admin SDK safely
+try {
+  const serviceAccount = require('./firebase-service-account.json');
+  if (serviceAccount.project_id && serviceAccount.project_id !== "YOUR_PROJECT_ID") {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    console.log("✅ Firebase Admin SDK initialized successfully");
+  } else {
+    console.warn("⚠️ firebase-service-account.json contains placeholder values. Firebase verification will run in DEVELOPMENT fallback mode.");
+  }
+} catch (err) {
+  console.warn("⚠️ Firebase Admin SDK could not load credentials. Running in DEVELOPMENT fallback mode.");
+}
 
 // Validate Environment Variables
 if (!process.env.MONGO_URI) {
@@ -42,6 +56,80 @@ const recommendationSchema = new mongoose.Schema({
 
 const Recommendation = mongoose.model('Recommendation', recommendationSchema);
 
+// Define User Schema
+const userSchema = new mongoose.Schema({
+  firebaseUid: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
+  phoneNumber: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  location: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  isPremium: {
+    type: Boolean,
+    default: false
+  },
+  premiumExpiresAt: {
+    type: Date,
+    default: null
+  }
+}, { 
+  timestamps: true,
+  collection: 'users'
+});
+
+const User = mongoose.model('User', userSchema);
+
+// Authentication Middleware (Firebase verified token)
+async function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Authorization token missing' });
+  }
+
+  const token = authHeader.split('Bearer ')[1];
+
+  try {
+    if (admin.apps.length > 0) {
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      req.user = decodedToken;
+      next();
+    } else {
+      console.warn("⚠️ Firebase Admin not initialized. Falling back to development mock check.");
+      if (token.startsWith("mock-uid-")) {
+        const uid = token.replace("mock-uid-", "");
+        req.user = { uid, email: `${uid}@mock.com` };
+        return next();
+      }
+      return res.status(401).json({ message: 'Firebase Admin not configured. Please add firebase-service-account.json' });
+    }
+  } catch (err) {
+    console.error("Token verification failed:", err);
+    return res.status(401).json({ message: 'Invalid or expired authorization token', error: err.message });
+  }
+}
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: "ok", message: "Stock Archery Main Server" });
@@ -59,6 +147,63 @@ app.get('/api/recommendations', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/auth/sync
+// Syncs authenticated Firebase user with MongoDB
+app.post('/api/auth/sync', requireAuth, async (req, res) => {
+  const { name, phoneNumber, location } = req.body;
+  const { uid, email } = req.user;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required from auth credentials' });
+  }
+
+  try {
+    // Find or create the user
+    let user = await User.findOne({ firebaseUid: uid });
+
+    if (!user) {
+      // If it's a new signup, validate that all required fields are present
+      if (!name || !phoneNumber || !location) {
+        return res.status(400).json({ message: 'Name, phone number, and location are required for new registration' });
+      }
+
+      user = new User({
+        firebaseUid: uid,
+        name,
+        email,
+        phoneNumber,
+        location,
+        isPremium: false
+      });
+      await user.save();
+      console.log(`👤 New user registered and synced in MongoDB: ${email}`);
+    } else {
+      // If the user already exists, update their profile fields optionally if provided
+      if (name) user.name = name;
+      if (phoneNumber) user.phoneNumber = phoneNumber;
+      if (location) user.location = location;
+      await user.save();
+      console.log(`🔄 User logged in and synced: ${email}`);
+    }
+
+    res.json({
+      status: "success",
+      user: {
+        firebaseUid: user.firebaseUid,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        location: user.location,
+        isPremium: user.isPremium,
+        premiumExpiresAt: user.premiumExpiresAt
+      }
+    });
+  } catch (err) {
+    console.error('Error syncing user:', err);
+    res.status(500).json({ message: 'User sync failed', error: err.message });
   }
 });
 
