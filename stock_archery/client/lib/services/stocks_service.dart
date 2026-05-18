@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'app_config.dart';
 
 class StocksService {
   static final StocksService _instance = StocksService._internal();
   factory StocksService() => _instance;
   StocksService._internal();
 
-  static String get baseUrl => dotenv.get('BASE_URL', fallback: 'http://172.24.224.1:5000/api');
+  static String get baseUrl => AppConfig.baseUrl;
 
   Future<List<String>> getRecommendations() async {
     try {
