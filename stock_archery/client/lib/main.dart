@@ -5,12 +5,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  try {
+    await dotenv.load(fileName: ".env", isOptional: true);
+  } catch (error, stackTrace) {
+    debugPrint('Warning: .env file could not be loaded: $error');
+    debugPrint('$stackTrace');
+  }
+
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatefulWidget {

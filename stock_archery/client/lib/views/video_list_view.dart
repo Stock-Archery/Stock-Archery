@@ -37,7 +37,7 @@ class VideoListView extends ConsumerWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => VideoPlayerScreen(
-                    videoId: video.videoId,
+                    video: video,
                   ),
                 ),
               );
