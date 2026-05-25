@@ -7,6 +7,13 @@ import 'package:client/views/video_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:io' show Platform;
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:client/viewmodels/auth_viewmodel.dart';
 
 class MainNavigationScreen extends ConsumerWidget {
   const MainNavigationScreen({super.key});
@@ -26,6 +33,50 @@ class MainNavigationScreen extends ConsumerWidget {
     ];
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Stock Archery',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () async {
+              try {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  final idToken = await user.getIdToken();
+                  final deviceInfo = DeviceInfoPlugin();
+                  String deviceId = 'unknown_device';
+                  if (Platform.isAndroid) {
+                    final info = await deviceInfo.androidInfo;
+                    deviceId = info.id;
+                  } else if (Platform.isIOS) {
+                    final info = await deviceInfo.iosInfo;
+                    deviceId = info.identifierForVendor ?? 'unknown_ios';
+                  }
+
+                  final apiUrl =
+                      dotenv.env['DEV_BASE_URL'] ?? 'http://10.0.2.2:5000';
+                  await http.post(
+                    Uri.parse('$apiUrl/user/device/unregister'),
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer $idToken',
+                    },
+                    body: jsonEncode({'deviceId': deviceId}),
+                  );
+                }
+              } catch (e) {
+                debugPrint('Token unregister error during logout: $e');
+              }
+              // Finally, clear local session and Firebase session
+              await ref.read(authProvider.notifier).logout();
+            },
+          ),
+        ],
+      ),
       body: IndexedStack(index: selectedIndex, children: screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

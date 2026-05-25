@@ -1,9 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-enum AppEnvironment {
-  development,
-  production,
-}
+enum AppEnvironment { development, production }
 
 class AppConfig {
   /// Toggle this to force an environment in Dart code, or leave as null
@@ -13,7 +10,7 @@ class AppConfig {
   /// Retrieve the current active environment (checks forceEnvironment, then falls back to .env)
   static AppEnvironment get environment {
     if (forceEnvironment != null) return forceEnvironment!;
-    
+
     final envStr = dotenv.get('APP_ENV', fallback: 'development').toLowerCase();
     if (envStr == 'production' || envStr == 'prod') {
       return AppEnvironment.production;
@@ -25,9 +22,15 @@ class AppConfig {
   static String get baseUrl {
     switch (environment) {
       case AppEnvironment.development:
-        return dotenv.get('DEV_BASE_URL', fallback: 'http://192.168.1.3:5000/api');
+        return dotenv.get(
+          'DEV_BASE_URL',
+          fallback: 'http://192.168.1.6:5000/api',
+        );
       case AppEnvironment.production:
-        return dotenv.get('PROD_BASE_URL', fallback: 'https://stock-archery-main.onrender.com/api');
+        return dotenv.get(
+          'PROD_BASE_URL',
+          fallback: 'https://stock-archery-main.onrender.com/api',
+        );
     }
   }
 

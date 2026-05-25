@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCF5IaQVjzivkSNSIT_SqsUAu7FTFn6ti8',
-    appId: '1:913763493698:android:d96627cd15c7419f064adb',
+    appId: '1:913763493698:android:eec65068435af538064adb',
     messagingSenderId: '913763493698',
     projectId: 'stock-archery-99',
     storageBucket: 'stock-archery-99.firebasestorage.app',
