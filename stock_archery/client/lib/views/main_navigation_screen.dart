@@ -2,6 +2,7 @@ import 'package:client/viewmodels/navigation_viewmodel.dart';
 import 'package:client/views/ai_bot_view.dart';
 import 'package:client/views/brokers_view.dart';
 import 'package:client/views/stocks_view.dart';
+import 'package:client/views/subscription_view.dart';
 import 'package:client/views/video_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,13 +22,11 @@ class MainNavigationScreen extends ConsumerWidget {
       const StocksView(),
       const AiBotView(),
       const BrokersView(),
+      const SubscriptionView(),
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: selectedIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: selectedIndex, children: screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,
@@ -89,6 +88,7 @@ class MainNavigationScreen extends ConsumerWidget {
               ),
               label: 'AI Bot',
             ),
+
             BottomNavigationBarItem(
               icon: Padding(
                 padding: EdgeInsets.only(bottom: 4),
@@ -99,6 +99,18 @@ class MainNavigationScreen extends ConsumerWidget {
                 child: Icon(Icons.business, size: 26),
               ),
               label: 'Brokers',
+            ),
+
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.star_outline, size: 26),
+              ),
+              activeIcon: Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.star, size: 26),
+              ),
+              label: 'Premium',
             ),
           ],
         ),
