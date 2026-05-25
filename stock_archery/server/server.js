@@ -93,8 +93,15 @@ const userSchema = new mongoose.Schema({
   premiumExpiresAt: {
     type: Date,
     default: null
-  }
-}, { 
+  },
+  fcmTokens: [{
+    token: { type: String, required: true },
+    deviceId: { type: String, required: true },
+    platform: { type: String },
+    isActive: { type: Boolean, default: true },
+    updatedAt: { type: Date, default: Date.now }
+  }]
+}, {
   timestamps: true,
   collection: 'users'
 });
@@ -182,10 +189,18 @@ app.post('/api/auth/sync', requireAuth, async (req, res) => {
       console.log(`👤 New user registered and synced in MongoDB: ${email}`);
     } else {
       // If the user already exists, update their profile fields optionally if provided
-      if (name) user.name = name;
-      if (phoneNumber) user.phoneNumber = phoneNumber;
-      if (location) user.location = location;
-      await user.save();
+      const updateData = {};
+      if (name) updateData.name = name;
+      if (phoneNumber) updateData.phoneNumber = phoneNumber;
+      if (location) updateData.location = location;
+
+      if (Object.keys(updateData).length > 0) {
+        user = await User.findOneAndUpdate(
+          { firebaseUid: uid },
+          { $set: updateData },
+          { new: true }
+        );
+      }
       console.log(`🔄 User logged in and synced: ${email}`);
     }
 
@@ -204,6 +219,167 @@ app.post('/api/auth/sync', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Error syncing user:', err);
     res.status(500).json({ message: 'User sync failed', error: err.message });
+  }
+});
+
+// POST /api/user/device/register
+// Registers or updates an FCM token for a device
+app.post('/api/user/device/register', requireAuth, async (req, res) => {
+  const { token, deviceId, platform } = req.body;
+  const { uid } = req.user;
+
+  if (!token || !deviceId) {
+    return res.status(400).json({ message: 'Token and deviceId are required' });
+  }
+
+  try {
+    const user = await User.findOne({ firebaseUid: uid });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const existingTokenIndex = user.fcmTokens.findIndex(t => t.deviceId === deviceId);
+
+    if (existingTokenIndex > -1) {
+      // Update existing device
+      user.fcmTokens[existingTokenIndex].token = token;
+      user.fcmTokens[existingTokenIndex].platform = platform || user.fcmTokens[existingTokenIndex].platform;
+      user.fcmTokens[existingTokenIndex].isActive = true;
+      user.fcmTokens[existingTokenIndex].updatedAt = new Date();
+    } else {
+      // Add new device
+      user.fcmTokens.push({
+        token,
+        deviceId,
+        platform,
+        isActive: true,
+        updatedAt: new Date()
+      });
+    }
+
+    await user.save();
+    // console.log(`✅ Device registered successfully: ${email}`);
+    res.json({ status: 'success', message: 'Device registered successfully' });
+  } catch (err) {
+
+    console.error('Error registering device:', err);
+    res.status(500).json({ message: 'Failed to register device', error: err.message });
+  }
+});
+
+// POST /api/user/device/unregister
+// Unregisters an FCM token (e.g., on logout)
+app.post('/api/user/device/unregister', requireAuth, async (req, res) => {
+  const { deviceId } = req.body;
+  const { uid } = req.user;
+
+  if (!deviceId) return res.status(400).json({ message: 'deviceId is required' });
+
+  try {
+    const user = await User.findOne({ firebaseUid: uid });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const existingTokenIndex = user.fcmTokens.findIndex(t => t.deviceId === deviceId);
+    if (existingTokenIndex > -1) {
+      user.fcmTokens[existingTokenIndex].isActive = false;
+      user.fcmTokens[existingTokenIndex].updatedAt = new Date();
+      await user.save();
+    }
+
+    res.json({ status: 'success', message: 'Device unregistered successfully' });
+  } catch (err) {
+    console.error('Error unregistering device:', err);
+    res.status(500).json({ message: 'Failed to unregister device', error: err.message });
+  }
+});
+
+// Helper Function: Send Push Notifications & Handle Inactive Tokens
+async function sendPushNotification(user, title, body, data = {}) {
+  const activeTokens = user.fcmTokens.filter(t => t.isActive).map(t => t.token);
+
+  if (activeTokens.length === 0) {
+    console.log(`No active tokens for user ${user.email}.`);
+    return { successCount: 0, failureCount: 0 };
+  }
+
+  const message = {
+    notification: { title, body },
+    data,
+    tokens: activeTokens
+  };
+
+  try {
+    const response = await admin.messaging().sendEachForMulticast(message);
+
+    // Check for uninstalled/inactive tokens
+    if (response.failureCount > 0) {
+      const tokensToRemove = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const errorCode = resp.error.code;
+          if (
+            errorCode === 'messaging/invalid-registration-token' ||
+            errorCode === 'messaging/registration-token-not-registered'
+          ) {
+            tokensToRemove.push(activeTokens[idx]);
+          }
+        }
+      });
+
+      if (tokensToRemove.length > 0) {
+        console.log(`Deactivating ${tokensToRemove.length} invalid tokens for user ${user.email}`);
+        user.fcmTokens.forEach(t => {
+          if (tokensToRemove.includes(t.token)) {
+            t.isActive = false;
+            t.updatedAt = new Date();
+          }
+        });
+        await user.save();
+      }
+    }
+
+    return response;
+  } catch (err) {
+    console.error('Push notification failed:', err);
+    throw err;
+  }
+}
+
+// POST /api/test/push (Testing utility)
+app.post('/api/test/push', requireAuth, async (req, res) => {
+  const { title, body } = req.body;
+  const { uid } = req.user;
+
+  try {
+    const user = await User.findOne({ firebaseUid: uid });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const response = await sendPushNotification(user, title || 'Test Notification', body || 'This is a test');
+    res.json({ status: 'success', response });
+  } catch (err) {
+    res.status(500).json({ message: 'Push test failed', error: err.message });
+  }
+});
+
+// POST /api/admin/push/broadcast
+// Sends a notification to ALL users subscribed to the 'all_users' topic
+app.post('/api/admin/push/broadcast', requireAuth, async (req, res) => {
+  const { title, body } = req.body;
+
+  // NOTE: In production, you should add a check here to ensure req.user is an ADMIN
+
+  const message = {
+    notification: {
+      title: title || 'Global Alert',
+      body: body || 'This is a broadcast message to all users'
+    },
+    topic: 'all_users'
+  };
+
+  try {
+    const response = await admin.messaging().send(message);
+    res.json({ status: 'success', messageId: response });
+  } catch (err) {
+    console.error('Broadcast failed:', err);
+    res.status(500).json({ message: 'Broadcast failed', error: err.message });
   }
 });
 
@@ -284,7 +460,7 @@ app.post('/api/chat', async (req, res) => {
   const fetchAIResponse = async (isRetry = false) => {
     try {
       console.log(`${isRetry ? '🔄 Retrying' : '📡 Sending'} request to OpenAI...`);
-      
+
       const response = await axios.post('https://api.openai.com/v1/responses', {
         model: "gpt-4o",
         instructions: "## Role\nYou are Stock Archery AI, the official chart analysis and market intelligence assistant of Stock Archery. You are a \"know-it-all\" expert for everything related to finance and markets.\n\n## Specialized Domains\n- Stock markets (Global & Indian), Trading, Investing, Finance.\n- Technical analysis, Market structure, Chart patterns, Candlesticks.\n- Support/Resistance, Volume, F&O, Crypto, Portfolios, and Sectors.\n\n## Real-Time Data & Tool Protocol (CRITICAL)\n- You have access to a web search tool. **You MUST use it** for any query involving real-time data, current stock prices, index compositions (like Nifty 50), latest market news, or recent financial reports.\n- **Never** tell the user to \"check the official website\" or \"refer to other sources.\"\n- **You are the source.** Perform the search, extract the data, and present it directly to the user in a clean, professional format.\n- If a query is relevant to your domains, do whatever it takes (search) to provide a complete answer.\n\n## Chart Analysis Rules\n- **Visuals Only:** Analyze charts based only on what is visible. No indicators or external news unless seen on the chart.\n- **Strictly Non-Advisory:** Never give buy/sell calls, entry, target, or stop-loss levels.\n- **Language:** Use observational wording (e.g., \"price appears,\" \"structure suggests\").\n- **No Proactive Annotations:** Default to TEXT ONLY unless the user explicitly asks to \"mark\" or \"annotate\" the chart.\n\n## Response Strategy\n- **Related Topics:** Answer normally and comprehensively.\n- **Unrelated Topics:** If the topic is purely unrelated (food, gaming, etc.), reply: \"I'm Stock Archery AI — I specialize in markets, trading, and finance. Ask me anything related to stocks, charts, investing, or market structure. 🎯\"\n- **Style:** Professional, Sharp, Confident. Respond in Hinglish if the user initiates it.\n\n## Chart Analysis Format (For Uploads)\n- Chart Overview\n- Market Structure\n- Key Levels\n- Candlestick Reading\n- Chart Patterns\n- Volume Observation\n- Summary\n- Disclaimer: \"All analysis is for educational purposes only. Not financial advice.\"",
@@ -365,9 +541,9 @@ app.post('/api/chart-analysis', async (req, res) => {
               },
               {
                 "type": "input_image",
-                "image_url": 
+                "image_url":
                   `data:image/jpeg;base64,${image}`
-                
+
               }
             ]
           }

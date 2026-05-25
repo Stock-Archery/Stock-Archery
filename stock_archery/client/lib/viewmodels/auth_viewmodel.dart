@@ -2,6 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/app_config.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:io' show Platform;
+import 'dart:convert';
+import 'package:flutter/material.dart';
 
 // Provider for raw AuthService
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -15,11 +22,7 @@ class AuthState {
   final bool isLoading;
   final String? errorMessage;
 
-  AuthState({
-    this.user,
-    this.isLoading = false,
-    this.errorMessage,
-  });
+  AuthState({this.user, this.isLoading = false, this.errorMessage});
 
   AuthState copyWith({
     UserModel? user,
@@ -53,15 +56,62 @@ class AuthViewModel extends StateNotifier<AuthState> {
             state = state.copyWith(isLoading: true, clearError: true);
             final idToken = await firebaseUser.getIdToken() ?? '';
             
+            // Print the ID Token so you can use it in Postman
+            debugPrint('\n================ FIREBASE ID TOKEN (BEARER TOKEN) ================');
+            debugPrint(idToken);
+            debugPrint('==================================================================\n');
+            
             // Sync with backend using current token
             final response = await _authService.syncProfile(idToken);
-            
+
             state = AuthState(user: response, isLoading: false);
+
+            // Register FCM token now that user is synced
+            try {
+              final token = await FirebaseMessaging.instance.getToken();
+              if (token != null) {
+                // Subscribe to global topic for broadcast notifications
+                await FirebaseMessaging.instance.subscribeToTopic('all_users');
+                debugPrint('Subscribed to all_users topic.');
+
+                final deviceInfo = DeviceInfoPlugin();
+                String deviceId = 'unknown_device';
+                String platform = 'unknown';
+
+                if (Platform.isAndroid) {
+                  final info = await deviceInfo.androidInfo;
+                  deviceId = info.id;
+                  platform = 'android';
+                } else if (Platform.isIOS) {
+                  final info = await deviceInfo.iosInfo;
+                  deviceId = info.identifierForVendor ?? 'unknown_ios';
+                  platform = 'ios';
+                }
+
+                final apiUrl =
+                    dotenv.env['DEV_BASE_URL'] ?? 'http://10.0.2.2:5000';
+                await http.post(
+                  Uri.parse('$apiUrl/user/device/register'),
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer $idToken',
+                  },
+                  body: jsonEncode({
+                    'token': token,
+                    'deviceId': deviceId,
+                    'platform': platform,
+                  }),
+                );
+                debugPrint('Registered FCM token post-sync.');
+              }
+            } catch (e) {
+              debugPrint('Post-sync token registration failed: $e');
+            }
           } catch (e) {
             state = AuthState(
-              user: null, 
-              isLoading: false, 
-              errorMessage: "Failed to sync profile: ${e.toString()}"
+              user: null,
+              isLoading: false,
+              errorMessage: "Failed to sync profile: ${e.toString()}",
             );
           }
         }
@@ -98,16 +148,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
   }
 
   /// Signin to existing user account
-  Future<bool> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> login({required String email, required String password}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final user = await _authService.login(
-        email: email,
-        password: password,
-      );
+      final user = await _authService.login(email: email, password: password);
       state = AuthState(user: user, isLoading: false);
       return true;
     } catch (e) {
