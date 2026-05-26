@@ -23,15 +23,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macOS - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for Windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for Linux - '
@@ -45,8 +39,8 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCF5IaQVjzivkSNSIT_SqsUAu7FTFn6ti8',
-    appId: '1:913763493698:web:d96627cd15c7419f064adb',
+    apiKey: 'AIzaSyCizzPHA6_sDBxHagbgvQTX30XEtidAtuQ',
+    appId: '1:913763493698:web:e5519b2b17f08c40064adb',
     messagingSenderId: '913763493698',
     projectId: 'stock-archery-99',
     authDomain: 'stock-archery-99.firebaseapp.com',
@@ -62,11 +56,30 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCF5IaQVjzivkSNSIT_SqsUAu7FTFn6ti8',
-    appId: '1:913763493698:ios:d96627cd15c7419f064adb',
+    apiKey: 'AIzaSyBrN5siId_SjvIMms81PqavwSHGnv6wIPk',
+    appId: '1:913763493698:ios:a184ba42d5426352064adb',
+    messagingSenderId: '913763493698',
+    projectId: 'stock-archery-99',
+    storageBucket: 'stock-archery-99.firebasestorage.app',
+    iosBundleId: 'com.stockarchery.app',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyBrN5siId_SjvIMms81PqavwSHGnv6wIPk',
+    appId: '1:913763493698:ios:975cd44dc08e8f69064adb',
     messagingSenderId: '913763493698',
     projectId: 'stock-archery-99',
     storageBucket: 'stock-archery-99.firebasestorage.app',
     iosBundleId: 'com.example.client',
   );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyCizzPHA6_sDBxHagbgvQTX30XEtidAtuQ',
+    appId: '1:913763493698:web:6f91ec6ac6cbfbd1064adb',
+    messagingSenderId: '913763493698',
+    projectId: 'stock-archery-99',
+    authDomain: 'stock-archery-99.firebaseapp.com',
+    storageBucket: 'stock-archery-99.firebasestorage.app',
+  );
+
 }
