@@ -1,3 +1,4 @@
+import 'package:client/services/app_config.dart';
 import 'package:client/viewmodels/navigation_viewmodel.dart';
 import 'package:client/views/ai_bot_view.dart';
 import 'package:client/views/brokers_view.dart';
@@ -57,8 +58,7 @@ class MainNavigationScreen extends ConsumerWidget {
                     deviceId = info.identifierForVendor ?? 'unknown_ios';
                   }
 
-                  final apiUrl =
-                      dotenv.env['DEV_BASE_URL'] ?? 'http://10.0.2.2:5000';
+                  final apiUrl = AppConfig.baseUrl;
                   await http.post(
                     Uri.parse('$apiUrl/user/device/unregister'),
                     headers: {

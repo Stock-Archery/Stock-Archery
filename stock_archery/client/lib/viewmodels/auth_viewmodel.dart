@@ -88,8 +88,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
                   platform = 'ios';
                 }
 
-                final apiUrl =
-                    dotenv.env['DEV_BASE_URL'] ?? 'http://10.0.2.2:5000';
+                final apiUrl = AppConfig.baseUrl;
                 await http.post(
                   Uri.parse('$apiUrl/user/device/register'),
                   headers: {
