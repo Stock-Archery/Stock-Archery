@@ -58,7 +58,7 @@ class MainNavigationScreen extends ConsumerWidget {
                   }
 
                   final apiUrl =
-                      dotenv.env['DEV_BASE_URL'] ?? 'http://10.0.2.2:5000';
+                      dotenv.env['PROD_BASE_URL'] ?? 'http://10.0.2.2:5000';
                   await http.post(
                     Uri.parse('$apiUrl/user/device/unregister'),
                     headers: {
