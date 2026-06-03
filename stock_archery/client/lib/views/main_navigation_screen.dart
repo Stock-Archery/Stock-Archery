@@ -22,7 +22,6 @@ class MainNavigationScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(navigationProvider);
-    final theme = Theme.of(context);
 
     final List<Widget> screens = [
       const VideoListView(),
