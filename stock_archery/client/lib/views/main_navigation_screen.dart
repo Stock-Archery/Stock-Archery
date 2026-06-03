@@ -1,4 +1,5 @@
 import 'package:client/services/app_config.dart';
+import 'package:client/utils/design_system/design_system.dart';
 import 'package:client/viewmodels/navigation_viewmodel.dart';
 import 'package:client/views/ai_bot_view.dart';
 import 'package:client/views/brokers_view.dart';
@@ -10,7 +11,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:io' show Platform;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -23,7 +23,6 @@ class MainNavigationScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(navigationProvider);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     final List<Widget> screens = [
       const VideoListView(),
@@ -34,60 +33,146 @@ class MainNavigationScreen extends ConsumerWidget {
     ];
 
     return Scaffold(
+      backgroundColor: AppColors.deepObsidian,
       appBar: AppBar(
+        backgroundColor: AppColors.deepObsidian,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         title: Text(
           'Stock Archery',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () async {
-              try {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user != null) {
-                  final idToken = await user.getIdToken();
-                  final deviceInfo = DeviceInfoPlugin();
-                  String deviceId = 'unknown_device';
-                  if (Platform.isAndroid) {
-                    final info = await deviceInfo.androidInfo;
-                    deviceId = info.id;
-                  } else if (Platform.isIOS) {
-                    final info = await deviceInfo.iosInfo;
-                    deviceId = info.identifierForVendor ?? 'unknown_ios';
-                  }
-
-                  final apiUrl = AppConfig.baseUrl;
-                  await http.post(
-                    Uri.parse('$apiUrl/user/device/unregister'),
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': 'Bearer $idToken',
-                    },
-                    body: jsonEncode({'deviceId': deviceId}),
-                  );
-                }
-              } catch (e) {
-                debugPrint('Token unregister error during logout: $e');
-              }
-              // Finally, clear local session and Firebase session
-              await ref.read(authProvider.notifier).logout();
-            },
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            color: AppColors.onSurface,
+            letterSpacing: -0.3,
           ),
-        ],
+        ),
+        centerTitle: true,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.account_circle_outlined, color: AppColors.metallicGold, size: 28),
+            tooltip: 'Menu',
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: AppColors.subtleGrey.withValues(alpha: 0.12),
+          ),
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            SizedBox(
+              height: 160,
+              child: DrawerHeader(
+                decoration: const BoxDecoration(color: Colors.blueGrey),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      ref.watch(authProvider).user?.name ?? '',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '+91 ${ref.watch(authProvider).user?.phoneNumber ?? ''}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      ref.watch(authProvider).user?.isPremium == true
+                          ? 'Premium Plan'
+                          : 'Free Plan',
+                      style: TextStyle(
+                        color: ref.watch(authProvider).user?.isPremium == true
+                            ? Colors.amber
+                            : Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.settings),
+              title: Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: navigate to Settings screen
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.support_agent),
+              title: Text('Support'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: support callback
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.logout),
+              title: Text('Logout'),
+              onTap: () async {
+                try {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    final idToken = await user.getIdToken();
+                    final deviceInfo = DeviceInfoPlugin();
+                    String deviceId = 'unknown_device';
+                    if (Platform.isAndroid) {
+                      final info = await deviceInfo.androidInfo;
+                      deviceId = info.id;
+                    } else if (Platform.isIOS) {
+                      final info = await deviceInfo.iosInfo;
+                      deviceId = info.identifierForVendor ?? 'unknown_ios';
+                    }
+                    final apiUrl = AppConfig.baseUrl;
+                    await http.post(
+                      Uri.parse('$apiUrl/user/device/unregister'),
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer $idToken',
+                      },
+                      body: jsonEncode({'deviceId': deviceId}),
+                    );
+                  }
+                } catch (e) {
+                  debugPrint('Token unregister error during logout: $e');
+                }
+                await ref.read(authProvider.notifier).logout();
+                if (!context.mounted) return;
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       ),
       body: IndexedStack(index: selectedIndex, children: screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
+          color: AppColors.surfaceNav,
+          border: Border(
+            top: BorderSide(
+              color: AppColors.subtleGrey.withValues(alpha: 0.12),
+              width: 1,
             ),
-          ],
+          ),
         ),
         child: BottomNavigationBar(
           currentIndex: selectedIndex,
@@ -95,71 +180,70 @@ class MainNavigationScreen extends ConsumerWidget {
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.transparent,
           elevation: 0,
-          selectedItemColor: const Color(0xFF6366F1), // Modern Indigo
-          unselectedItemColor: isDark ? Colors.grey[600] : Colors.grey[400],
+          selectedItemColor: AppColors.metallicGold,
+          unselectedItemColor: AppColors.subtleGrey,
           selectedLabelStyle: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+            letterSpacing: 0.3,
           ),
           unselectedLabelStyle: GoogleFonts.inter(
             fontWeight: FontWeight.w500,
-            fontSize: 12,
+            fontSize: 11,
           ),
           items: const [
             BottomNavigationBarItem(
               icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.play_circle_outline, size: 26),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.play_circle_outline, size: 24),
               ),
               activeIcon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.play_circle_fill, size: 26),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.play_circle_fill, size: 24),
               ),
               label: 'Strategy',
             ),
             BottomNavigationBarItem(
               icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.trending_up_outlined, size: 26),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.trending_up_outlined, size: 24),
               ),
               activeIcon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.trending_up, size: 26),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.trending_up, size: 24),
               ),
               label: 'Stocks',
             ),
             BottomNavigationBarItem(
               icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.chat_bubble_outline, size: 26),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.smart_toy_outlined, size: 24),
               ),
               activeIcon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.chat_bubble, size: 26),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.smart_toy, size: 24),
               ),
               label: 'AI Bot',
             ),
-
             BottomNavigationBarItem(
               icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.business_outlined, size: 26),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.account_balance_outlined, size: 24),
               ),
               activeIcon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.business, size: 26),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.account_balance, size: 24),
               ),
               label: 'Brokers',
             ),
-
             BottomNavigationBarItem(
               icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.star_outline, size: 26),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.workspace_premium_outlined, size: 24),
               ),
               activeIcon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.star, size: 26),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.workspace_premium, size: 24),
               ),
               label: 'Premium',
             ),
