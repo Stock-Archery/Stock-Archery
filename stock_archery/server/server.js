@@ -142,6 +142,45 @@ app.get('/', (req, res) => {
   res.json({ status: "ok", message: "Stock Archery Main Server" });
 });
 
+// POST /api/auth/send-otp
+// Generates and sends a 2factor SMS OTP for a phone number
+app.post('/api/auth/send-otp', async (req, res) => {
+  const { phoneNumber } = req.body;
+  if (!phoneNumber) {
+    return res.status(400).json({ message: 'Phone number is required' });
+  }
+
+  try {
+    const apiKey = process.env.TWOFACTOR_API_KEY || "e6ec9604-5ea1-11f1-8352-0200cd936042";
+    const url = `https://2factor.in/API/V1/${apiKey}/SMS/${phoneNumber}/AUTOGEN2/`;
+    console.log(`📡 Requesting 2Factor OTP for ${phoneNumber}...`);
+    const response = await axios.get(url);
+
+    if (response.data && response.data.Status === "Success") {
+      const otp = response.data.OTP;
+      console.log(`🔑 Received 6-digit OTP from 2Factor for ${phoneNumber}: ${otp}`);
+      res.json({
+        success: true,
+        message: 'OTP sent successfully via 2Factor',
+        otp: otp
+      });
+    } else {
+      console.error("❌ 2Factor API Error:", response.data);
+      res.status(500).json({
+        success: false,
+        message: response.data ? response.data.Details : 'Failed to send OTP via 2factor'
+      });
+    }
+  } catch (err) {
+    console.error("❌ Failed to request OTP from 2Factor:", err.message);
+    res.status(500).json({
+      success: false,
+      message: 'OTP service connection failed',
+      error: err.message
+    });
+  }
+});
+
 // GET /api/recommendations
 app.get('/api/recommendations', async (req, res) => {
   try {

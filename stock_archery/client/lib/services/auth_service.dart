@@ -18,6 +18,34 @@ class AuthService {
 
   AuthService({required this.baseUrl});
 
+  /// Request a mock 4-digit SMS OTP for phone verification
+  Future<String> sendOtp(String phoneNumber) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/send-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phoneNumber': phoneNumber}),
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true) {
+          return body['otp']?.toString() ?? '';
+        }
+        throw Exception(body['message'] ?? 'Failed to send OTP');
+      } else {
+        try {
+          final errBody = jsonDecode(response.body);
+          throw Exception(errBody['message'] ?? 'Failed to send OTP');
+        } catch (_) {
+          throw Exception('Failed to send OTP');
+        }
+      }
+    } catch (e) {
+      throw Exception('OTP service error: ${e.toString()}');
+    }
+  }
+
   // Keep a local in-memory session for the Mock environment
   UserModel? _mockUser;
   bool _isMockLoggedIn = false;
