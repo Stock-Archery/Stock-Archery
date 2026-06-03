@@ -50,6 +50,7 @@ dependencies:
   firebase_auth: ^5.1.0
   firebase_messaging: ^15.2.10
   device_info_plus: ^12.4.0
+  fluttertoast: ^8.2.10
 
 dev_dependencies:
   flutter_test:

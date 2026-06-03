@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../utils/toast_util.dart';
 
 class PhoneInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     // Keep only numeric characters
     final text = newValue.text.replaceAll(RegExp(r'\D'), '');
     if (text.length > 10) {
@@ -48,13 +51,17 @@ class _SignupViewState extends ConsumerState<SignupView> {
   bool _obscurePassword = true;
 
   // Step and OTP flow variables
-  int _currentStep = 1; // Step 1: Name & Phone verification, Step 2: Account details
+  int _currentStep =
+      1; // Step 1: Name & Phone verification, Step 2: Account details
   bool _otpSent = false;
   String? _expectedOtp;
   bool _sendOtpLoading = false;
   String? _otpError;
 
-  final List<TextEditingController> _otpControllers = List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
 
   @override
@@ -91,7 +98,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
           _otpSent = true;
           _sendOtpLoading = false;
         });
-        
+
         // Focus the first OTP box
         if (mounted) {
           _otpFocusNodes[0].requestFocus();
@@ -121,10 +128,12 @@ class _SignupViewState extends ConsumerState<SignupView> {
         _currentStep = 2;
         _otpError = null;
       });
+      ToastUtil.showSuccess(context, "Phone Number Verified");
     } else {
-      setState(() {
-        _otpError = "Verification failed";
-      });
+      // setState(() {
+      //   _otpError = "Verification failed";
+      // });
+      ToastUtil.showError(context, "Wrong OTP!");
     }
   }
 
@@ -133,7 +142,9 @@ class _SignupViewState extends ConsumerState<SignupView> {
 
     final cleanPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
 
-    final success = await ref.read(authProvider.notifier).signUp(
+    final success = await ref
+        .read(authProvider.notifier)
+        .signUp(
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
           phoneNumber: cleanPhone,
@@ -142,14 +153,10 @@ class _SignupViewState extends ConsumerState<SignupView> {
         );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Account created successfully!",
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-          ),
-          backgroundColor: const Color(0xFF6366F1),
-        ),
+      ToastUtil.showSuccess(
+        context,
+        "Account Created!",
+        description: "Welcome to ArrowAI.",
       );
       Navigator.of(context).pop();
     }
@@ -180,7 +187,10 @@ class _SignupViewState extends ConsumerState<SignupView> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 10.0,
+            ),
             child: _currentStep == 1 ? _buildStep1() : _buildStep2(authState),
           ),
         ),
@@ -190,7 +200,8 @@ class _SignupViewState extends ConsumerState<SignupView> {
 
   Widget _buildStep1() {
     final phoneDigits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    final isSendOtpEnabled = phoneDigits.length == 10 && _nameController.text.trim().isNotEmpty;
+    final isSendOtpEnabled =
+        phoneDigits.length == 10 && _nameController.text.trim().isNotEmpty;
 
     return Form(
       key: _formKey1,
@@ -243,7 +254,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
                   IconButton(
                     icon: const Icon(Icons.close, size: 16, color: Colors.red),
                     onPressed: () => setState(() => _otpError = null),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -262,8 +273,12 @@ class _SignupViewState extends ConsumerState<SignupView> {
             controller: _nameController,
             onChanged: (_) => setState(() {}),
             style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-            decoration: _buildInputDecoration("e.g. John Doe", Icons.person_outline),
-            validator: (val) => val == null || val.trim().isEmpty ? 'Name is required' : null,
+            decoration: _buildInputDecoration(
+              "e.g. John Doe",
+              Icons.person_outline,
+            ),
+            validator: (val) =>
+                val == null || val.trim().isEmpty ? 'Name is required' : null,
           ),
 
           const SizedBox(height: 20),
@@ -284,10 +299,15 @@ class _SignupViewState extends ConsumerState<SignupView> {
             inputFormatters: [PhoneInputFormatter()],
             onChanged: (_) => setState(() {}),
             style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-            decoration: _buildInputDecoration("e.g. 98765 43210", Icons.phone_outlined),
+            decoration: _buildInputDecoration(
+              "e.g. 98765 43210",
+              Icons.phone_outlined,
+            ),
             validator: (val) {
-              if (val == null || val.trim().isEmpty) return 'Phone number is required';
-              if (val.replaceAll(RegExp(r'\D'), '').length != 10) return 'Enter exactly 10 digits';
+              if (val == null || val.trim().isEmpty)
+                return 'Phone number is required';
+              if (val.replaceAll(RegExp(r'\D'), '').length != 10)
+                return 'Enter exactly 10 digits';
               return null;
             },
           ),
@@ -354,7 +374,10 @@ class _SignupViewState extends ConsumerState<SignupView> {
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
                     maxLength: 1,
-                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                     decoration: InputDecoration(
                       counterText: "",
                       contentPadding: EdgeInsets.zero,
@@ -370,7 +393,10 @@ class _SignupViewState extends ConsumerState<SignupView> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF6366F1),
+                          width: 1.5,
+                        ),
                       ),
                     ),
                     onChanged: (value) {
@@ -417,7 +443,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
               ),
             ),
           ],
-          
+
           const SizedBox(height: 40),
 
           // Back to Login Link
@@ -503,8 +529,9 @@ class _SignupViewState extends ConsumerState<SignupView> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, size: 16, color: Colors.red),
-                    onPressed: () => ref.read(authProvider.notifier).clearError(),
-                  )
+                    onPressed: () =>
+                        ref.read(authProvider.notifier).clearError(),
+                  ),
                 ],
               ),
             ),
@@ -523,7 +550,10 @@ class _SignupViewState extends ConsumerState<SignupView> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-            decoration: _buildInputDecoration("e.g. name@domain.com", Icons.email_outlined),
+            decoration: _buildInputDecoration(
+              "e.g. name@domain.com",
+              Icons.email_outlined,
+            ),
             validator: (val) {
               if (val == null || val.isEmpty) return 'Email is required';
               if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) {
@@ -548,8 +578,13 @@ class _SignupViewState extends ConsumerState<SignupView> {
           TextFormField(
             controller: _locationController,
             style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-            decoration: _buildInputDecoration("e.g. Mumbai, India", Icons.location_on_outlined),
-            validator: (val) => val == null || val.trim().isEmpty ? 'Location is required' : null,
+            decoration: _buildInputDecoration(
+              "e.g. Mumbai, India",
+              Icons.location_on_outlined,
+            ),
+            validator: (val) => val == null || val.trim().isEmpty
+                ? 'Location is required'
+                : null,
           ),
 
           const SizedBox(height: 20),
@@ -573,16 +608,26 @@ class _SignupViewState extends ConsumerState<SignupView> {
               hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
               filled: true,
               fillColor: const Color(0xFFF8F9FA),
-              prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Colors.black45),
+              prefixIcon: const Icon(
+                Icons.lock_outline,
+                size: 20,
+                color: Colors.black45,
+              ),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   size: 20,
                   color: Colors.black45,
                 ),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 16,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -593,12 +638,16 @@ class _SignupViewState extends ConsumerState<SignupView> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                borderSide: const BorderSide(
+                  color: Color(0xFF6366F1),
+                  width: 1.5,
+                ),
               ),
             ),
             validator: (val) {
               if (val == null || val.isEmpty) return 'Password is required';
-              if (val.length < 6) return 'Password must be at least 6 characters';
+              if (val.length < 6)
+                return 'Password must be at least 6 characters';
               return null;
             },
           ),
