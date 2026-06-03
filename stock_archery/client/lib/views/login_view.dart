@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../utils/toast_util.dart';
 import 'signup_view.dart';
 
 class LoginView extends ConsumerStatefulWidget {
@@ -33,14 +34,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
         );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Welcome back!",
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-          ),
-          backgroundColor: const Color(0xFF6366F1),
-        ),
+      ToastUtil.showSuccess(
+        context,
+        "Welcome Back!",
+        description: "Login successful.",
       );
     }
   }

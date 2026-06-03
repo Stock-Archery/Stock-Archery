@@ -118,6 +118,22 @@ class AuthViewModel extends StateNotifier<AuthState> {
     }
   }
 
+  /// Request SMS OTP for a phone number
+  Future<String?> sendOtp(String phoneNumber) async {
+    try {
+      state = state.copyWith(isLoading: true, clearError: true);
+      final otp = await _authService.sendOtp(phoneNumber);
+      state = state.copyWith(isLoading: false);
+      return otp;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString().replaceAll("Exception: ", ""),
+      );
+      return null;
+    }
+  }
+
   /// Signup a new user account
   Future<bool> signUp({
     required String name,

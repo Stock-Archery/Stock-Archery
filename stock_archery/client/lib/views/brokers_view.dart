@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:client/utils/design_system/design_system.dart';
 
 class BrokersView extends StatefulWidget {
   const BrokersView({super.key});
@@ -11,7 +12,6 @@ class BrokersView extends StatefulWidget {
 
 class _BrokersViewState extends State<BrokersView> {
   final ScrollController _scrollController = ScrollController();
-  final GlobalKey _howToEarnKey = GlobalKey();
 
   @override
   void dispose() {
@@ -26,219 +26,108 @@ class _BrokersViewState extends State<BrokersView> {
     }
   }
 
-  void _scrollToHowToEarn() {
-    final context = _howToEarnKey.currentContext;
-    if (context != null) {
-      Scrollable.ensureVisible(
-        context,
-        duration: const Duration(milliseconds: 800),
-        curve: Curves.easeInOutCubic,
-      );
-    }
-  }
-
   void _showComingSoon(BuildContext context, String broker) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           "$broker integration is coming soon! Stay tuned.",
-          style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: AppColors.onSurface),
         ),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF6366F1),
+        backgroundColor: AppColors.surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
       ),
     );
   }
 
-  void _showVerifyPlaceholder(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text("Verification", style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
-        content: Text(
-          "A Google Form will open here shortly to verify your account registration. This feature is currently being finalized.",
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600]),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Got it", style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF6366F1))),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.deepObsidian,
       body: SafeArea(
         child: SingleChildScrollView(
           controller: _scrollController,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.containerMarginMobile),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with Stats
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Broker Partners",
-                          style: GoogleFonts.inter(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.5,
-                            color: isDark ? Colors.white : const Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Compare and earn rewards",
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _buildCashbackCard(context, isDark),
-                ],
+              // Title / Description
+              Text(
+                "Broker Partners",
+                style: AppTypography.headlineLgMobile(color: AppColors.onSurface),
               ),
-
+              const SizedBox(height: 8),
+              Text(
+                "Compare top-tier brokers and get exclusive benefits.",
+                style: AppTypography.bodyMd(color: AppColors.subtleGrey),
+              ),
               const SizedBox(height: 24),
 
-              // How to Earn Shortcut (Replaces Available Offers Bar)
-              InkWell(
-                onTap: _scrollToHowToEarn,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.2), width: 1.5),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.info_outline_rounded, color: Colors.white, size: 20),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Not sure how it works?",
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                              ),
-                            ),
-                            Text(
-                              "Click here to see 'How to Earn'",
-                              style: GoogleFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF6366F1),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6366F1)),
-                    ],
-                  ),
-                ),
+              // How to Earn Section Header
+              Text(
+                "How to Claim Benefits",
+                style: AppTypography.titleMd(color: AppColors.goldBright),
               ),
+              const SizedBox(height: 16),
 
-              const SizedBox(height: 24),
+              // How to Earn Steps Grid (2x2 with descriptions)
+              _buildHowToEarnGrid(),
+              const SizedBox(height: 32),
 
               // Broker Cards
               _buildBrokerCard(
-                context,
                 name: "Fyers",
                 logoAsset: "assets/logos/fyers.jpeg",
-                reward: "₹ 0",
-                description: "Fast execution, advanced charts & trading tools.",
+                description: "Focus on long-term investing with zero brokerage.",
                 color: const Color(0xFF2563EB),
                 isPopular: true,
-                isDark: isDark,
+                isWide: false,
                 onTap: () => _launchUrl("https://signup.fyers.in/?utm-source=AP-Leads&utm-medium=AP3324"),
+                onVerifyTap: () => _launchUrl("https://forms.gle/M9pksV9eWH2sjqPB6"),
               ),
               _buildBrokerCard(
-                context,
                 name: "CoinDCX",
                 logoAsset: "assets/logos/coindcx.png",
-                isWide: true,
-                reward: "₹ 0",
                 description: "India's safest crypto exchange with 500+ assets.",
                 color: const Color(0xFFF97316),
-                isDark: isDark,
+                isPopular: false,
+                isWide: true,
                 onTap: () => _launchUrl("https://invite.coindcx.com/46915912"),
+                onVerifyTap: () => _launchUrl("https://forms.gle/idJxF6auWfS7Yiy69"),
               ),
               _buildBrokerCard(
-                context,
                 name: "Angel One",
                 logoAsset: "assets/logos/angelone.png",
-                isWide: true,
-                reward: "₹ 0",
-                description: "Zero brokerage on delivery & simple interface.",
+                description: "Intelligent trading with ARQ Prime advisory.",
                 color: const Color(0xFF3B82F6),
-                isDark: isDark,
+                isPopular: false,
+                isWide: true,
                 onTap: () => _showComingSoon(context, "Angel One"),
               ),
               _buildBrokerCard(
-                context,
                 name: "Dhan",
                 logoAsset: "assets/logos/dhan.jpeg",
-                reward: "₹ 0",
-                description: "Lightning fast trading experience for pros.",
+                description: "Lighting fast trading experience for pros.",
                 color: const Color(0xFF22C55E),
-                isDark: isDark,
+                isPopular: false,
+                isWide: false,
                 onTap: () => _showComingSoon(context, "Dhan"),
               ),
               _buildBrokerCard(
-                context,
                 name: "Upstox",
                 logoAsset: "assets/logos/upstox.jpeg",
-                reward: "₹ 0",
                 description: "Reliable platform with advanced analytics.",
                 color: const Color(0xFF9333EA),
-                isDark: isDark,
+                isPopular: false,
+                isWide: false,
                 onTap: () => _showComingSoon(context, "Upstox"),
               ),
-
-              const SizedBox(height: 32),
-
-              // How to Earn Section
-              _buildHowToEarnSection(isDark, _howToEarnKey),
 
               const SizedBox(height: 24),
 
               // Assistance Card
               _buildAssistanceCard(),
-
               const SizedBox(height: 32),
             ],
           ),
@@ -247,444 +136,264 @@ class _BrokersViewState extends State<BrokersView> {
     );
   }
 
-  Widget _buildCashbackCard(BuildContext context, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  Widget _buildHowToEarnGrid() {
+    final List<Map<String, dynamic>> steps = [
+      {
+        "icon": Icons.person_add_alt_1_outlined,
+        "title": "Open Account",
+        "desc": "Open a new trading account via the broker link."
+      },
+      {
+        "icon": Icons.account_balance_wallet_outlined,
+        "title": "Add Funds",
+        "desc": "Add min ₹100 and execute first trade within 7 days."
+      },
+      {
+        "icon": Icons.crop_free_outlined,
+        "title": "Take Screenshot",
+        "desc": "Capture client ID and trade confirmation screen."
+      },
+      {
+        "icon": Icons.check_circle_outline_outlined,
+        "title": "Submit Details",
+        "desc": "Upload screenshots through form to claim benefit."
+      },
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.15,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF22C55E).withOpacity(0.1),
-              shape: BoxShape.circle,
+      itemCount: steps.length,
+      itemBuilder: (context, index) {
+        final step = steps[index];
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.pureBlack.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.subtleGrey.withOpacity(0.1),
+              width: 1,
             ),
-            child: const Icon(Icons.account_balance_wallet_rounded, 
-              color: Color(0xFF22C55E), size: 20),
           ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                "CASHBACK",
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey[500],
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  step["icon"] as IconData,
+                  color: AppColors.metallicGold,
+                  size: 18,
                 ),
               ),
+              const SizedBox(height: 8),
               Text(
-                "₹ 0",
+                step["title"] as String,
+                textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface.withOpacity(0.9),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                step["desc"] as String,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  color: AppColors.subtleGrey,
+                  height: 1.25,
                 ),
               ),
             ],
           ),
-          const SizedBox(width: 16),
-          TextButton(
-            onPressed: () {},
-            style: TextButton.styleFrom(
-              backgroundColor: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFF0F172A),
-              foregroundColor: isDark ? Colors.white : Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(
-              "Redeem",
-              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildBrokerCard(
-    BuildContext context, {
+  Widget _buildBrokerCard({
     required String name,
     required String logoAsset,
-    required String reward,
     required String description,
     required Color color,
     bool isPopular = false,
     bool isWide = false,
-    required bool isDark,
     required VoidCallback onTap,
+    VoidCallback? onVerifyTap,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.pureBlack,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.subtleGrey.withOpacity(0.15),
+          width: 1,
+        ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: isWide ? 85 : 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: isWide ? Colors.transparent : color,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          logoAsset,
-                          fit: isWide ? BoxFit.contain : BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Center(
-                            child: Text(
-                              name[0],
-                              style: GoogleFonts.inter(
-                                color: isWide ? color : Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                name,
-                                style: GoogleFonts.inter(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                ),
-                              ),
-                              if (isPopular) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE0E7FF),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    "POPULAR",
-                                    style: GoogleFonts.inter(
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.w800,
-                                      color: const Color(0xFF4338CA),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            description,
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: Colors.grey[500],
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          "REWARD",
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: isWide ? Colors.white : color,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      logoAsset,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Center(
+                        child: Text(
+                          name[0],
                           style: GoogleFonts.inter(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                        Text(
-                          reward,
-                          style: GoogleFonts.inter(
+                            color: isWide ? color : Colors.white,
                             fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF22C55E),
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: ElevatedButton(
-                        onPressed: onTap,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: color,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Text(
-                          "Open Account",
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: OutlinedButton(
-                        onPressed: () => _showVerifyPlaceholder(context),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: color.withOpacity(0.3), width: 1.5),
-                          foregroundColor: color,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Text(
-                          "Registered? Verify",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.subtleGrey,
+                          height: 1.3,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHowToEarnSection(bool isDark, GlobalKey key) {
-    final List<Map<String, String>> steps = [
-      {
-        "title": "Open Account",
-        "desc": "Click on your preferred broker and open a new demat/trading account."
-      },
-      {
-        "title": "Add Funds",
-        "desc": "Add a minimum of ₹100 and execute your first trade within 7 days."
-      },
-      {
-        "title": "Take Screenshot",
-        "desc": "Capture your client ID and first trade confirmation from the broker app."
-      },
-      {
-        "title": "Submit Details",
-        "desc": "Upload screenshots through our verification form to claim your reward."
-      },
-    ];
-
-    return Container(
-      key: key,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.access_time_filled_rounded, color: Color(0xFF3B82F6), size: 20),
-              const SizedBox(width: 12),
-              Text(
-                "How to Earn",
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onVerifyTap ?? () => _showComingSoon(context, name),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.metallicGold, width: 1),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      foregroundColor: AppColors.metallicGold,
+                    ),
+                    child: Text(
+                      "Registered? Verify",
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          ...List.generate(steps.length, (index) {
-            return IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFE2E8F0)),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "${index + 1}",
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (index != steps.length - 1)
-                        Expanded(
-                          child: Container(
-                            width: 2,
-                            color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          steps[index]["title"]!,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : const Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          steps[index]["desc"]!,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: Colors.grey[500],
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onTap,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(
+                      "Open Account",
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
                     ),
                   ),
-                ],
-              ),
-            );
-          }),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => _showVerifyPlaceholder(context),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE2E8F0)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Already registered? Submit Details",
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.chevron_right_rounded, size: 20),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildAssistanceCard() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: AppColors.pureBlack.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.subtleGrey.withOpacity(0.1),
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             "Need Assistance?",
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
+            style: GoogleFonts.montserrat(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            "Our support team is available 24/7 to help with account opening and verification.",
+            "Our elite support team is ready to help you with your account verification.",
+            textAlign: TextAlign.center,
             style: GoogleFonts.inter(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.9),
-              height: 1.5,
+              fontSize: 13,
+              color: AppColors.subtleGrey,
+              height: 1.4,
             ),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF4F46E5),
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              child: Text(
-                "Contact Support",
-                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
+          OutlinedButton(
+            onPressed: () {},
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.metallicGold, width: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              foregroundColor: AppColors.metallicGold,
+            ),
+            child: Text(
+              "Contact Support",
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -692,4 +401,3 @@ class _BrokersViewState extends State<BrokersView> {
     );
   }
 }
-

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:client/utils/design_system/design_system.dart';
 import 'package:client/viewmodels/chat_viewmodel.dart';
 import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
@@ -47,7 +48,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
   void _showImagePickerOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.deepObsidian,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -58,10 +59,10 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
           children: [
             Text(
               "Select Image Source",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.montserrat(
                 fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
               ),
             ),
             const SizedBox(height: 20),
@@ -100,18 +101,18 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
           Container(
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withOpacity(0.1),
+              color: AppColors.goldBright.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: const Color(0xFF6366F1), size: 30),
+            child: Icon(icon, color: AppColors.goldBright, size: 30),
           ),
           const SizedBox(height: 8),
           Text(
             label,
             style: GoogleFonts.inter(
               fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
             ),
           ),
         ],
@@ -122,14 +123,14 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.deepObsidian,
       appBar: _buildAppBar(),
       body: Column(
         children: [
           const SizedBox(height: 10),
           _buildSegmentedToggle(),
           const SizedBox(height: 10),
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+          Divider(height: 1, color: AppColors.subtleGrey.withValues(alpha: 0.12)),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -146,17 +147,22 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.deepObsidian,
       elevation: 0,
+      automaticallyImplyLeading: false,
       title: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFA500),
+              color: AppColors.goldBright.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.goldBright.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
-            child: const Icon(Icons.gps_fixed_rounded, color: Colors.white, size: 24),
+            child: const Icon(Icons.gps_fixed_rounded, color: AppColors.goldBright, size: 24),
           ),
           const SizedBox(width: 12),
           Column(
@@ -164,8 +170,8 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
             children: [
               Text(
                 "ArrowAI",
-                style: GoogleFonts.inter(
-                  color: Colors.black,
+                style: GoogleFonts.montserrat(
+                  color: AppColors.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
@@ -175,9 +181,9 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                   const Icon(Icons.circle, color: Colors.green, size: 8),
                   const SizedBox(width: 4),
                   Text(
-                    "Online  ",
+                    "Online",
                     style: GoogleFonts.inter(
-                      color: Colors.grey[600],
+                      color: AppColors.subtleGrey,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -196,8 +202,12 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
       margin: const EdgeInsets.symmetric(horizontal: 20),
       height: 45,
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F2F4),
+        color: AppColors.pureBlack,
         borderRadius: BorderRadius.circular(25),
+        border: Border.all(
+          color: AppColors.subtleGrey.withValues(alpha: 0.12),
+          width: 1,
+        ),
       ),
       child: Stack(
         children: [
@@ -209,15 +219,8 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
               width: MediaQuery.of(context).size.width * 0.44,
               margin: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
             ),
           ),
@@ -246,10 +249,10 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
           alignment: Alignment.center,
           child: Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.montserrat(
               fontSize: 13,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? Colors.black : Colors.grey[600],
+              color: isSelected ? AppColors.goldBright : AppColors.subtleGrey,
             ),
           ),
         ),
@@ -279,22 +282,26 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           children: [
-            const SizedBox(height: 60),
+            const SizedBox(height: 50),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: AppColors.pureBlack,
                 borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: AppColors.goldBright.withValues(alpha: 0.15),
+                  width: 1.5,
+                ),
               ),
-              child: const Icon(Icons.gps_fixed_rounded, color: Color(0xFFFFA500), size: 48),
+              child: const Icon(Icons.gps_fixed_rounded, color: AppColors.goldBright, size: 48),
             ),
             const SizedBox(height: 24),
             Text(
               "ArrowAI by Stock Archery",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.montserrat(
                 fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Colors.black,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -305,7 +312,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: AppColors.subtleGrey,
                 height: 1.5,
               ),
             ),
@@ -340,21 +347,27 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
   Widget _buildActionTile(IconData icon, String label) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: AppColors.pureBlack,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEEEEEE)),
+        border: Border.all(
+          color: AppColors.goldBright.withValues(alpha: 0.15),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF6366F1)),
+          Icon(icon, size: 18, color: AppColors.goldBright),
           const SizedBox(width: 8),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
+          Flexible(
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onSurface,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -371,10 +384,23 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
       messageOptions: MessageOptions(
         showOtherUsersAvatar: true,
         showTime: true,
-        containerColor: const Color(0xFFF3F4F6),
-        textColor: Colors.black,
-        currentUserContainerColor: const Color(0xFF6366F1),
-        currentUserTextColor: Colors.white,
+        containerColor: AppColors.pureBlack,
+        textColor: AppColors.onSurface,
+        currentUserContainerColor: AppColors.goldBright,
+        currentUserTextColor: AppColors.deepObsidian,
+        messageDecorationBuilder: (message, previousMessage, nextMessage) {
+          final isUser = message.user.id == viewModel.user.id;
+          return BoxDecoration(
+            color: isUser ? AppColors.goldBright : AppColors.pureBlack,
+            borderRadius: BorderRadius.circular(16),
+            border: isUser
+                ? null
+                : Border.all(
+                    color: AppColors.goldBright.withValues(alpha: 0.15),
+                    width: 1.0,
+                  ),
+          );
+        },
         messageTextBuilder: (message, previousMessage, nextMessage) {
           final isUser = message.user.id == viewModel.user.id;
           return MarkdownBody(
@@ -382,16 +408,16 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
             styleSheet: MarkdownStyleSheet(
               p: GoogleFonts.inter(
                 fontSize: 15,
-                color: isUser ? Colors.white : Colors.black,
+                color: isUser ? AppColors.deepObsidian : AppColors.onSurface,
               ),
               strong: GoogleFonts.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
-                color: isUser ? Colors.white : Colors.black,
+                color: isUser ? AppColors.deepObsidian : AppColors.onSurface,
               ),
               listBullet: GoogleFonts.inter(
                 fontSize: 15,
-                color: isUser ? Colors.white : Colors.black,
+                color: isUser ? AppColors.deepObsidian : AppColors.onSurface,
               ),
             ),
           );
@@ -405,9 +431,14 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEEEEEE))),
+      decoration: BoxDecoration(
+        color: AppColors.deepObsidian,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.subtleGrey.withValues(alpha: 0.12),
+            width: 1,
+          ),
+        ),
       ),
       child: Column(
         children: [
@@ -424,7 +455,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                     top: -5,
                     right: -5,
                     child: IconButton(
-                      icon: const Icon(Icons.cancel, color: Colors.red, size: 20),
+                      icon: const Icon(Icons.cancel, color: AppColors.error, size: 20),
                       onPressed: () => setState(() => _selectedImage = null),
                     ),
                   ),
@@ -436,24 +467,31 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
+                    color: AppColors.pureBlack,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    border: Border.all(
+                      color: AppColors.goldBright.withValues(alpha: 0.15),
+                      width: 1.2,
+                    ),
                   ),
                   child: Row(
                     children: [
                       if (isChart)
                         IconButton(
-                          icon: const Icon(Icons.file_upload_outlined, color: Colors.black54),
+                          icon: const Icon(Icons.file_upload_outlined, color: AppColors.goldBright),
                           onPressed: _showImagePickerOptions,
                         ),
                       if (!isChart) const SizedBox(width: 15),
                       Expanded(
                         child: TextField(
                           controller: controller,
+                          style: GoogleFonts.inter(color: AppColors.onSurface, fontSize: 14),
                           decoration: InputDecoration(
                             hintText: "Ask anything about stocks & charts...",
-                            hintStyle: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14),
+                            hintStyle: GoogleFonts.inter(
+                              color: AppColors.subtleGrey.withValues(alpha: 0.7),
+                              fontSize: 14,
+                            ),
                             border: InputBorder.none,
                           ),
                         ),
@@ -481,10 +519,10 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFA500),
+                              color: AppColors.goldBright,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                            child: const Icon(Icons.send_rounded, color: AppColors.deepObsidian, size: 20),
                           ),
                         ),
                       ),
@@ -497,7 +535,12 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
           const SizedBox(height: 8),
           Text(
             "Stock Archery • ArrowAI — No buy/sell signals. Observation only.",
-            style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.w500),
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              color: AppColors.subtleGrey.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
           ),
         ],
       ),
