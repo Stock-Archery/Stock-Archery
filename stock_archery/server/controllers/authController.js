@@ -1,0 +1,102 @@
+const axios = require('axios');
+const User = require('../models/User');
+
+exports.sendOtp = async (req, res) => {
+  const { phoneNumber } = req.body;
+  if (!phoneNumber) {
+    return res.status(400).json({ message: 'Phone number is required' });
+  }
+
+  try {
+    const apiKey = process.env.TWOFACTOR_API_KEY;
+    const url = `https://2factor.in/API/V1/${apiKey}/SMS/${phoneNumber}/AUTOGEN2/`;
+    console.log(`📡 Requesting 2Factor OTP for ${phoneNumber}...`);
+    const response = await axios.get(url);
+
+    if (response.data && response.data.Status === "Success") {
+      const otp = response.data.OTP;
+      console.log(`🔑 Received 6-digit OTP from 2Factor for ${phoneNumber}: ${otp}`);
+      res.json({
+        success: true,
+        message: 'OTP sent successfully via 2Factor',
+        otp: otp
+      });
+    } else {
+      console.error("❌ 2Factor API Error:", response.data);
+      res.status(500).json({
+        success: false,
+        message: response.data ? response.data.Details : 'Failed to send OTP via 2factor'
+      });
+    }
+  } catch (err) {
+    console.error("❌ Failed to request OTP from 2Factor:", err.message);
+    res.status(500).json({
+      success: false,
+      message: 'OTP service connection failed',
+      error: err.message
+    });
+  }
+};
+
+exports.syncUser = async (req, res) => {
+  const { name, phoneNumber, location } = req.body;
+  const { uid, email } = req.user;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required from auth credentials' });
+  }
+
+  try {
+    // Find or create the user
+    let user = await User.findOne({ firebaseUid: uid });
+
+    if (!user) {
+      // If it's a new signup, validate that all required fields are present
+      if (!name || !phoneNumber || !location) {
+        return res.status(400).json({ message: 'Name, phone number, and location are required for new registration' });
+      }
+
+      user = new User({
+        firebaseUid: uid,
+        name,
+        email,
+        phoneNumber,
+        location,
+        isPremium: false
+      });
+      await user.save();
+      console.log(`👤 New user registered and synced in MongoDB: ${email}`);
+    } else {
+      // If the user already exists, update their profile fields optionally if provided
+      const updateData = {};
+      if (name) updateData.name = name;
+      if (phoneNumber) updateData.phoneNumber = phoneNumber;
+      if (location) updateData.location = location;
+
+      if (Object.keys(updateData).length > 0) {
+        user = await User.findOneAndUpdate(
+          { firebaseUid: uid },
+          { $set: updateData },
+          { new: true }
+        );
+      }
+      console.log(`🔄 User logged in and synced: ${email}`);
+    }
+
+    res.json({
+      status: "success",
+      user: {
+        firebaseUid: user.firebaseUid,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        location: user.location,
+        isPremium: user.isPremium,
+        premiumExpiresAt: user.premiumExpiresAt
+      }
+    });
+  } catch (err) {
+    console.error('Error syncing user:', err);
+    res.status(500).json({ message: 'User sync failed', error: err.message });
+  }
+};
