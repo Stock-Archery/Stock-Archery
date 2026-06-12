@@ -1,37 +1,38 @@
 import 'package:client/Features/payment/view_model/offering_provider.dart';
-import 'package:client/widgets/build_Feature.dart';
+import 'package:client/Features/payment/view_model/premium_provider.dart';
+import 'package:client/utils/design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 👈 Add Riverpod
-import 'package:purchases_flutter/purchases_flutter.dart'; // 👈 Add RevenueCat models
-
-// Apne providers ka exact path yahan sahi se daal dena:
-import 'package:client/features/payment/view_model/premium_provider.dart'; 
-//import 'package:client/features/payment/view_model/offerings_provider.dart';
-
-class SubscriptionView extends ConsumerWidget { // 👈 Changed to ConsumerWidget
+class SubscriptionView extends ConsumerWidget {
   const SubscriptionView({super.key});
 
-  void _showSubscriptionSheet(BuildContext context, WidgetRef ref, Package annualPackage) {
+  void _showSubscriptionSheet(
+    BuildContext context,
+    WidgetRef ref,
+    Package annualPackage,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.deepObsidian,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
       ),
       builder: (context) {
-        // Hamare premiumProvider ki live state ko listen karne ke liye inside builder
         return Consumer(
           builder: (context, ref, child) {
             final premiumState = ref.watch(premiumProvider);
 
             return Padding(
               padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 20,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                left: AppSpacing.containerMarginMobile,
+                right: AppSpacing.containerMarginMobile,
+                top: AppSpacing.lg,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -39,105 +40,141 @@ class SubscriptionView extends ConsumerWidget { // 👈 Changed to ConsumerWidge
                 children: [
                   Center(
                     child: Container(
-                      width: 56,
+                      width: 48,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.subtleGrey.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(AppRadii.full),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'Confirm Premium',
-                    style: GoogleFonts.inter(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: AppColors.goldBright.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AppRadii.md),
+                          border: Border.all(
+                            color: AppColors.goldBright.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.workspace_premium_rounded,
+                          color: AppColors.goldBright,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Confirm Premium',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Secure Google Play checkout',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: AppColors.subtleGrey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Secure checkout with payment details below. Tap Pay to activate premium access.',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: Colors.grey,
-                      height: 1.5,
-                    ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _PaymentDetailRow(
+                    icon: Icons.credit_card_rounded,
+                    title: 'Subscription Type',
+                    subtitle: 'Google Play subscription',
                   ),
-                  const SizedBox(height: 24),
-                  const PaymentDetailRow(
-                    icon: Icons.credit_card,
-                    title: 'Card Type',
-                    subtitle: 'Google Play Subscription', // 👈 Cleaned up text
-                  ),
-                  PaymentDetailRow(
+                  _PaymentDetailRow(
                     icon: Icons.calendar_today_outlined,
                     title: 'Billing Cycle',
-                    subtitle: 'Yearly access (${annualPackage.storeProduct.priceString}/year)', // 👈 Dynamic price string
+                    subtitle:
+                        'Yearly access (${annualPackage.storeProduct.priceString}/year)',
                   ),
-                  const PaymentDetailRow(
-                    icon: Icons.security,
+                  const _PaymentDetailRow(
+                    icon: Icons.security_rounded,
                     title: 'Payment Security',
-                    subtitle: 'Encrypted and Google Play secured',
+                    subtitle: 'Encrypted and secured by Google Play',
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: AppSpacing.lg),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      // Agar loading chal rahi hai toh button disable ho jayega
                       onPressed: premiumState.isLoading
                           ? null
                           : () async {
-                              // Actual backend logic trigger ho rahi hai yahan
                               final success = await ref
                                   .read(premiumProvider.notifier)
                                   .purchasePackage(annualPackage);
 
-                              if (context.mounted) {
-                                Navigator.pop(context); // Close sheet
-                                
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Subscription successful! 🎉 Welcome to Pro.',
-                                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                                      ),
-                                      backgroundColor: const Color(0xFF10B981), // Success Green
+                              if (!context.mounted) return;
+                              Navigator.pop(context);
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    success
+                                        ? 'Subscription successful. Welcome to Premium.'
+                                        : 'Payment failed or was cancelled.',
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w600,
+                                      color: success
+                                          ? AppColors.deepObsidian
+                                          : AppColors.onSurface,
                                     ),
-                                  );
-                                } else if (premiumState.errorMessage != null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Payment Failed or Cancelled ❌',
-                                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                                      ),
-                                      backgroundColor: Colors.redAccent,
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: success
+                                      ? AppColors.goldBright
+                                      : AppColors.errorContainer,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadii.md,
                                     ),
-                                  );
-                                }
-                              }
+                                  ),
+                                  margin: const EdgeInsets.all(AppSpacing.md),
+                                ),
+                              );
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: AppColors.goldBright,
+                        foregroundColor: AppColors.deepObsidian,
+                        disabledBackgroundColor: AppColors.goldBright
+                            .withValues(alpha: 0.45),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppRadii.md),
                         ),
                       ),
                       child: premiumState.isLoading
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                color: AppColors.deepObsidian,
+                                strokeWidth: 2,
+                              ),
                             )
                           : Text(
-                              'Pay ${annualPackage.storeProduct.priceString}', // 👈 Localized Store Price (e.g., ₹499)
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
+                              'PAY ${annualPackage.storeProduct.priceString}',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: AppColors.deepObsidian,
                               ),
                             ),
                     ),
@@ -152,40 +189,40 @@ class SubscriptionView extends ConsumerWidget { // 👈 Changed to ConsumerWidge
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) { // 👈 Added WidgetRef
-    // Google Play se products fetch karo
+  Widget build(BuildContext context, WidgetRef ref) {
     final offeringsAsync = ref.watch(offeringsProvider);
     final premiumState = ref.watch(premiumProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'Premium',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w800,
-            color: Colors.black87,
+      backgroundColor: AppColors.deepObsidian,
+      body: offeringsAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.goldBright),
           ),
         ),
-      ),
-      body: offeringsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text("Error fetching subscription: $err")),
+        error: (err, stack) => _StateMessage(
+          icon: Icons.error_outline_rounded,
+          title: 'Unable to load Premium',
+          message: err.toString(),
+          color: AppColors.error,
+        ),
         data: (offerings) {
+          debugPrint('REVENUECAT DUMP: ${offerings?.all}');
+          debugPrint('CURRENT OFFERING DUMP: ${offerings?.current}');
 
-          debugPrint("🚨 REVENUECAT DUMP: ${offerings?.all}");
-          debugPrint("🚨 CURRENT OFFERING DUMP: ${offerings?.current}");
-          
           final currentOffering = offerings?.current;
-          
-          if (currentOffering == null || currentOffering.availablePackages.isEmpty) {
-            return const Center(child: Text("No subscription bundles found on Play Console."));
+
+          if (currentOffering == null ||
+              currentOffering.availablePackages.isEmpty) {
+            return const _StateMessage(
+              icon: Icons.inventory_2_outlined,
+              title: 'No subscription found',
+              message: 'No subscription bundles found on Play Console.',
+              color: AppColors.subtleGrey,
+            );
           }
 
-          // Aapka Annual package automatically select hoga yahan dashboard se
           final activePackage = currentOffering.availablePackages.firstWhere(
             (pkg) => pkg.packageType == PackageType.annual,
             orElse: () => currentOffering.availablePackages.first,
@@ -193,185 +230,457 @@ class SubscriptionView extends ConsumerWidget { // 👈 Changed to ConsumerWidge
 
           final localizedPrice = activePackage.storeProduct.priceString;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.containerMarginMobile,
+              AppSpacing.lg,
+              AppSpacing.containerMarginMobile,
+              AppSpacing.xxl,
+            ),
+            children: [
+              Text(
+                'Premium',
+                style: GoogleFonts.montserrat(
+                  color: AppColors.goldBright,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Upgrade your Stock Archery tools with AI insights, premium lessons, and advanced market tracking.',
+                style: GoogleFonts.inter(
+                  color: AppColors.subtleGrey,
+                  fontSize: 14,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              _PlanCard(
+                price: localizedPrice,
+                isPremium: premiumState.isPremium,
+                onPressed: premiumState.isPremium
+                    ? null
+                    : () => _showSubscriptionSheet(context, ref, activePackage),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                'What You Unlock',
+                style: GoogleFonts.montserrat(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const _PremiumFeatureCard(
+                icon: Icons.smart_toy_outlined,
+                title: 'Live AI Trading Bot',
+                description:
+                    'Get instant AI-powered answers to your stock market questions.',
+              ),
+              const _PremiumFeatureCard(
+                icon: Icons.play_circle_outline_rounded,
+                title: 'Premium Video Lectures',
+                description:
+                    'Master trading and investing with expert-curated premium lessons.',
+              ),
+              const _PremiumFeatureCard(
+                icon: Icons.people_alt_outlined,
+                title: 'Top Influencer Stocks',
+                description:
+                    'Track trending investments and portfolios from top creators.',
+              ),
+              const _PremiumFeatureCard(
+                icon: Icons.show_chart_rounded,
+                title: 'AI Buy/Sell Signals',
+                description:
+                    'Receive smart stock alerts and AI-generated trading opportunities.',
+              ),
+              const _PremiumFeatureCard(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'Broker Referral Rewards',
+                description:
+                    'Earn cashback and rewards with the premium broker referral program.',
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _TrustFooter(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _PlanCard extends StatelessWidget {
+  final String price;
+  final bool isPremium;
+  final VoidCallback? onPressed;
+
+  const _PlanCard({
+    required this.price,
+    required this.isPremium,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.pureBlack,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        border: Border.all(
+          color: AppColors.goldBright.withValues(alpha: 0.22),
+          width: 1.5,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned(
+            right: -30,
+            top: -28,
+            child: Icon(
+              Icons.workspace_premium_rounded,
+              size: 150,
+              color: AppColors.goldBright.withValues(alpha: 0.08),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.cardPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// HERO SECTION
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                    color: AppColors.goldBright.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    border: Border.all(
+                      color: AppColors.goldBright.withValues(alpha: 0.35),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.deepPurple.withOpacity(0.25),
-                        blurRadius: 25,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Text(
-                          'MOST POPULAR',
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                      const Icon(
+                        Icons.stars_rounded,
+                        color: AppColors.goldBright,
+                        size: 15,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(width: AppSpacing.xs),
                       Text(
-                        'Unlock Smarter Investing 🚀',
+                        isPremium ? 'ACTIVE PLAN' : 'MOST POPULAR',
                         style: GoogleFonts.inter(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          height: 1.2,
+                          color: AppColors.goldBright,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
                         ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        'Premium AI insights, influencer stock tracking, advanced trading lectures, and powerful investment tools.',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.85),
-                          height: 1.6,
-                        ),
-                      ),
-                      const SizedBox(height: 26),
-                      Row(
-                        children: [
-                          Text(
-                            localizedPrice, // 👈 Dashboard dynamic price string
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 34,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '/year', // 👈 Naming sync with your Play Console annual plan
-                            style: GoogleFonts.inter(
-                              color: Colors.white70,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Premium Features',
-                  style: GoogleFonts.inter(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+                  'Archery Premium',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSurface,
                   ),
                 ),
-                const SizedBox(height: 20),
-                FeatureCard(
-                  title: 'Live AI Trading Bot',
-                  description: 'Get instant AI-powered answers to your stock market queries anytime.',
-                  color: const Color(0xFF4F46E5),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Built for sharper market decisions with premium research, AI tools, and broker benefits.',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppColors.onSurface.withValues(alpha: 0.76),
+                    height: 1.45,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                FeatureCard(
-                  title: 'Premium Video Lectures',
-                  description: 'Master trading and investing with expert-curated premium lessons.',
-                  color: const Color(0xFFEC4899),
-                ),
-                const SizedBox(height: 16),
-                FeatureCard(
-                  title: 'Top Influencer Stocks',
-                  description: 'Track trending investments and portfolios from top creators.',
-                  color: const Color(0xFF10B981),
-                ),
-                const SizedBox(height: 16),
-                FeatureCard(
-                  title: 'AI Buy/Sell Signals',
-                  description: 'Receive smart stock alerts and AI-generated trading opportunities.',
-                  color: const Color(0xFFF59E0B),
-                ),
-                const SizedBox(height: 16),
-                FeatureCard(
-                  title: 'Broker Referral Rewards',
-                  description: 'Earn cashback and rewards with our premium broker referral program.',
-                  color: const Color(0xFF8B5CF6),
-                ),
-                const SizedBox(height: 32),
-
-                /// SUBSCRIBE BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    // Package details ko sheet ke andar pass kiya
-                    onPressed: () => _showSubscriptionSheet(context, ref, activePackage),
-                    style: ElevatedButton.styleFrom(
-                      elevation: 0,
-                      backgroundColor: premiumState.isPremium ? const Color(0xFF10B981) : const Color(0xFF111827),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        price,
+                        style: GoogleFonts.montserrat(
+                          color: AppColors.goldBright,
+                          fontSize: 34,
+                          fontWeight: FontWeight.w700,
+                          height: 1,
+                        ),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          premiumState.isPremium ? Icons.check_circle : Icons.workspace_premium_rounded,
-                          color: Colors.amber,
-                          size: 22,
+                    const SizedBox(width: AppSpacing.sm),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        '/ year',
+                        style: GoogleFonts.inter(
+                          color: AppColors.subtleGrey,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          premiumState.isPremium ? 'You are a Pro User 👑' : 'Subscribe Now',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 0.3,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Center(
-              child: Text(
-                'Secure Payments • Cancel Anytime • Instant Access',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
+                const SizedBox(height: AppSpacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: onPressed,
+                    icon: Icon(
+                      isPremium
+                          ? Icons.check_circle_rounded
+                          : Icons.workspace_premium_rounded,
+                      size: 20,
+                    ),
+                    label: Text(isPremium ? 'PREMIUM ACTIVE' : 'UPGRADE NOW'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.goldBright,
+                      foregroundColor: AppColors.deepObsidian,
+                      disabledBackgroundColor: AppColors.goldBright.withValues(
+                        alpha: 0.45,
+                      ),
+                      disabledForegroundColor: AppColors.deepObsidian
+                          .withValues(alpha: 0.75),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                      ),
+                      textStyle: GoogleFonts.montserrat(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PremiumFeatureCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _PremiumFeatureCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.pureBlack,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(
+          color: AppColors.subtleGrey.withValues(alpha: 0.12),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.goldBright.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              border: Border.all(
+                color: AppColors.goldBright.withValues(alpha: 0.24),
               ),
             ),
-            const SizedBox(height: 20),
+            child: Icon(icon, color: AppColors.goldBright, size: 22),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  description,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.subtleGrey,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentDetailRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _PaymentDetailRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.pureBlack,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: AppColors.subtleGrey.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.goldBright, size: 22),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.subtleGrey,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrustFooter extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.pureBlack.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(color: AppColors.subtleGrey.withValues(alpha: 0.10)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.verified_user_outlined,
+            size: 16,
+            color: AppColors.goldBright,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Flexible(
+            child: Text(
+              'Secure payments - Cancel anytime - Instant access',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.subtleGrey,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StateMessage extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+  final Color color;
+
+  const _StateMessage({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 58),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.montserrat(
+                color: AppColors.onSurface,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                color: AppColors.subtleGrey,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
           ],
         ),
-      );
-    },
-  ),
-);
-}
+      ),
+    );
+  }
 }
