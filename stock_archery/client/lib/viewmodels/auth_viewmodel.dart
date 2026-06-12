@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/app_config.dart';
@@ -151,6 +152,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
         location: location,
         password: password,
       );
+
+      //revenue cat me user registered
+      await Purchases.logIn(user.firebaseUid);
+
+
       state = AuthState(user: user, isLoading: false);
       return true;
     } catch (e) {
@@ -167,6 +173,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final user = await _authService.login(email: email, password: password);
+
+      //revenue cat me register ho gya user
+      await Purchases.logIn(user.firebaseUid);
+
+
       state = AuthState(user: user, isLoading: false);
       return true;
     } catch (e) {
@@ -182,6 +193,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
   Future<void> logout() async {
     state = state.copyWith(isLoading: true);
     await _authService.logout();
+
+    //revenue cat se logout
+    await Purchases.logOut();
+
+
     state = AuthState(user: null);
   }
 
