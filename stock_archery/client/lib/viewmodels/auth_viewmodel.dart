@@ -10,6 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:io' show Platform;
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'session_provider.dart';
 
 // Provider for raw AuthService
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -22,27 +23,36 @@ class AuthState {
   final UserModel? user;
   final bool isLoading;
   final String? errorMessage;
+  final bool isKickedOut;
 
-  AuthState({this.user, this.isLoading = false, this.errorMessage});
+  AuthState({
+    this.user,
+    this.isLoading = false,
+    this.errorMessage,
+    this.isKickedOut = false,
+  });
 
   AuthState copyWith({
     UserModel? user,
     bool? isLoading,
     String? errorMessage,
+    bool? isKickedOut,
     bool clearError = false,
   }) {
     return AuthState(
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      isKickedOut: isKickedOut ?? this.isKickedOut,
     );
   }
 }
 
 class AuthViewModel extends StateNotifier<AuthState> {
   final AuthService _authService;
+  final Ref _ref;
 
-  AuthViewModel(this._authService) : super(AuthState()) {
+  AuthViewModel(this._authService, this._ref) : super(AuthState()) {
     _listenToAuthChanges();
   }
 
@@ -145,6 +155,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      debugPrint('[AuthViewModel] Initiating user registration for: $email');
       final user = await _authService.signUp(
         name: name,
         email: email,
@@ -153,6 +164,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
         password: password,
       );
 
+      // Save a new session ID for this newly registered user
+      debugPrint('[AuthViewModel] Registration successful. Registering active session ID.');
+      await _ref.read(sessionServiceProvider).saveNewSession(user.firebaseUid);
+
       //revenue cat me user registered
       await Purchases.logIn(user.firebaseUid);
 
@@ -160,6 +175,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       state = AuthState(user: user, isLoading: false);
       return true;
     } catch (e) {
+      debugPrint('[AuthViewModel] ❌ Registration failed: $e');
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll("Exception: ", ""),
@@ -172,7 +188,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
   Future<bool> login({required String email, required String password}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      debugPrint('[AuthViewModel] Initiating user login for: $email');
       final user = await _authService.login(email: email, password: password);
+
+      // Save a new session ID for this newly logged-in user
+      debugPrint('[AuthViewModel] Login successful. Registering active session ID.');
+      await _ref.read(sessionServiceProvider).saveNewSession(user.firebaseUid);
 
       //revenue cat me register ho gya user
       await Purchases.logIn(user.firebaseUid);
@@ -181,6 +202,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       state = AuthState(user: user, isLoading: false);
       return true;
     } catch (e) {
+      debugPrint('[AuthViewModel] ❌ Login failed: $e');
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll("Exception: ", ""),
@@ -189,9 +211,14 @@ class AuthViewModel extends StateNotifier<AuthState> {
     }
   }
 
-  /// Log out current session
+  /// Log out current session manually
   Future<void> logout() async {
     state = state.copyWith(isLoading: true);
+    debugPrint('[AuthViewModel] Executing manual logout.');
+    
+    // Clear local session ID from shared preferences
+    await _ref.read(sessionServiceProvider).clearLocalSession();
+
     await _authService.logout();
 
     //revenue cat se logout
@@ -199,6 +226,25 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
 
     state = AuthState(user: null);
+  }
+
+  /// Force logout current session when duplicate login detected
+  Future<void> forceLogout() async {
+    state = state.copyWith(isLoading: true);
+    debugPrint('[AuthViewModel] 🚨 Executing force logout due to duplicate active session.');
+    await _authService.logout();
+
+    //revenue cat se logout
+    await Purchases.logOut();
+
+    // Set user to null and mark isKickedOut to true so LoginView can trigger toast
+    state = AuthState(user: null, isKickedOut: true);
+  }
+
+  /// Reset the kicked out flag
+  void clearKickedOut() {
+    debugPrint('[AuthViewModel] Clearing kicked out flag from AuthState.');
+    state = state.copyWith(isKickedOut: false);
   }
 
   /// Clear active error banner
@@ -210,5 +256,5 @@ class AuthViewModel extends StateNotifier<AuthState> {
 // Global Provider for Auth state and operations
 final authProvider = StateNotifierProvider<AuthViewModel, AuthState>((ref) {
   final service = ref.watch(authServiceProvider);
-  return AuthViewModel(service);
+  return AuthViewModel(service, ref);
 });
