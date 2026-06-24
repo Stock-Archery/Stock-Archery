@@ -3,6 +3,7 @@ import 'package:client/utils/design_system/design_system.dart';
 import 'package:client/viewmodels/navigation_viewmodel.dart';
 import 'package:client/views/ai_bot_view.dart';
 import 'package:client/views/brokers_view.dart';
+import 'package:client/views/settings_view.dart';
 import 'package:client/views/stocks_view.dart';
 import 'package:client/views/subscription_view.dart';
 import 'package:client/views/video_list_view.dart';
@@ -113,7 +114,10 @@ class MainNavigationScreen extends ConsumerWidget {
               title: Text('Settings'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: navigate to Settings screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsView()),
+                );
               },
             ),
             ListTile(
