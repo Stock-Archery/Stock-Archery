@@ -66,12 +66,16 @@ class AuthViewModel extends StateNotifier<AuthState> {
           try {
             state = state.copyWith(isLoading: true, clearError: true);
             final idToken = await firebaseUser.getIdToken() ?? '';
-            
+
             // Print the ID Token so you can use it in Postman
-            debugPrint('\n================ FIREBASE ID TOKEN (BEARER TOKEN) ================');
+            debugPrint(
+              '\n================ FIREBASE ID TOKEN (BEARER TOKEN) ================',
+            );
             debugPrint(idToken);
-            debugPrint('==================================================================\n');
-            
+            debugPrint(
+              '==================================================================\n',
+            );
+
             // Sync with backend using current token
             final response = await _authService.syncProfile(idToken);
 
@@ -165,12 +169,13 @@ class AuthViewModel extends StateNotifier<AuthState> {
       );
 
       // Save a new session ID for this newly registered user
-      debugPrint('[AuthViewModel] Registration successful. Registering active session ID.');
+      debugPrint(
+        '[AuthViewModel] Registration successful. Registering active session ID.',
+      );
       await _ref.read(sessionServiceProvider).saveNewSession(user.firebaseUid);
 
       //revenue cat me user registered
       await Purchases.logIn(user.firebaseUid);
-
 
       state = AuthState(user: user, isLoading: false);
       return true;
@@ -192,12 +197,13 @@ class AuthViewModel extends StateNotifier<AuthState> {
       final user = await _authService.login(email: email, password: password);
 
       // Save a new session ID for this newly logged-in user
-      debugPrint('[AuthViewModel] Login successful. Registering active session ID.');
+      debugPrint(
+        '[AuthViewModel] Login successful. Registering active session ID.',
+      );
       await _ref.read(sessionServiceProvider).saveNewSession(user.firebaseUid);
 
       //revenue cat me register ho gya user
       await Purchases.logIn(user.firebaseUid);
-
 
       state = AuthState(user: user, isLoading: false);
       return true;
@@ -215,7 +221,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
   Future<void> logout() async {
     state = state.copyWith(isLoading: true);
     debugPrint('[AuthViewModel] Executing manual logout.');
-    
+
     // Clear local session ID from shared preferences
     await _ref.read(sessionServiceProvider).clearLocalSession();
 
@@ -224,14 +230,15 @@ class AuthViewModel extends StateNotifier<AuthState> {
     //revenue cat se logout
     await Purchases.logOut();
 
-
     state = AuthState(user: null);
   }
 
   /// Force logout current session when duplicate login detected
   Future<void> forceLogout() async {
     state = state.copyWith(isLoading: true);
-    debugPrint('[AuthViewModel] 🚨 Executing force logout due to duplicate active session.');
+    debugPrint(
+      '[AuthViewModel] 🚨 Executing force logout due to duplicate active session.',
+    );
     await _authService.logout();
 
     //revenue cat se logout

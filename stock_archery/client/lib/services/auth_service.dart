@@ -6,7 +6,7 @@ import '../models/user_model.dart';
 
 class AuthService {
   final String baseUrl;
-  
+
   // Detect if Firebase Core is fully initialized with custom project configuration
   bool get isFirebaseAvailable {
     try {
@@ -73,10 +73,8 @@ class AuthService {
   }) async {
     if (isFirebaseAvailable) {
       // 1. Create user in Firebase Auth
-      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
 
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) {
@@ -105,14 +103,18 @@ class AuthService {
         return UserModel.fromJson(body['user']);
       } else {
         final errBody = jsonDecode(response.body);
-        throw Exception(errBody['message'] ?? 'Backend profile synchronization failed.');
+        throw Exception(
+          errBody['message'] ?? 'Backend profile synchronization failed.',
+        );
       }
     } else {
       // Fallback/Mock Mode: Sync directly with backend using a simulated UID
-      print("⚠️ Firebase unavailable. Registering user in Mock / Development mode.");
-      
+      print(
+        "⚠️ Firebase unavailable. Registering user in Mock / Development mode.",
+      );
+
       final mockUid = 'mock-uid-${email.split('@')[0]}';
-      
+
       final response = await http.post(
         Uri.parse('$baseUrl/auth/sync'),
         headers: {
@@ -145,10 +147,8 @@ class AuthService {
   }) async {
     if (isFirebaseAvailable) {
       // 1. Sign in with Firebase
-      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
 
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) {
@@ -178,9 +178,9 @@ class AuthService {
     } else {
       // Mock Login Fallback: Check user existence using the backend
       print("⚠️ Firebase unavailable. Logging in via Mock / Development mode.");
-      
+
       final mockUid = 'mock-uid-${email.split('@')[0]}';
-      
+
       // We send a sync request with placeholder fields to satisfy requireAuth/registration logic
       final response = await http.post(
         Uri.parse('$baseUrl/auth/sync'),
