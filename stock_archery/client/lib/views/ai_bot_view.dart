@@ -260,16 +260,16 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
     );
   }
 
-  Widget _buildChatView(WidgetRef ref, StateNotifierProvider<ChatViewModel, List<ChatMessage>> provider, {required bool isChart}) {
-    final messages = ref.watch(provider);
+  Widget _buildChatView(WidgetRef ref, StateNotifierProvider<ChatViewModel, ChatState> provider, {required bool isChart}) {
+    final chatState = ref.watch(provider);
     final viewModel = ref.read(provider.notifier);
 
     return Column(
       children: [
         Expanded(
-          child: messages.isEmpty 
+          child: chatState.messages.isEmpty && !chatState.isLoading
             ? _buildWelcomeScreen(isChart)
-            : _buildMessageList(messages, viewModel, isChart),
+            : _buildMessageList(chatState.messages, viewModel, isChart, isLoading: chatState.isLoading),
         ),
         _buildInputArea(viewModel, isChart),
       ],
@@ -375,7 +375,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
     );
   }
 
-  Widget _buildMessageList(List<ChatMessage> messages, ChatViewModel viewModel, bool isChart) {
+  Widget _buildMessageList(List<ChatMessage> messages, ChatViewModel viewModel, bool isChart, {bool isLoading = false}) {
     return DashChat(
       currentUser: viewModel.user,
       onSend: (_) {}, // Handled by our custom input
@@ -423,6 +423,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
           );
         },
       ),
+      typingUsers: isLoading ? [viewModel.gemini] : [],
     );
   }
 
