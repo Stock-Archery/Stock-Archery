@@ -10,7 +10,7 @@ exports.getAlertsByCategory = async (req, res) => {
   }
 
   try {
-    const alerts = await AlertPost.find({ category }).sort({ createdAt: 1 });
+    const alerts = await AlertPost.find({ category }).sort({ createdAt: -1 });
     res.json(alerts);
   } catch (err) {
     console.error('Error fetching alerts:', err.message);
