@@ -62,7 +62,13 @@ exports.syncUser = async (req, res) => {
         email,
         phoneNumber,
         location,
-        isPremium: false
+        isPremium: false,
+        isSOB_alert_premium: false,
+        SOB_alert_expiresAt: null,
+        isXaud_alert_premium: false,
+        Xaud_alert_expiresAt: null,
+        isCrypto_alert_premium: false,
+        Crypto_alert_expiresAt: null
       });
       await user.save();
       console.log(`👤 New user registered and synced in MongoDB: ${email}`);
