@@ -100,7 +100,7 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        return UserModel.fromJson(body['user'], body['alertAccess']);
+        return UserModel.fromJson(body['user']);
       } else {
         final errBody = jsonDecode(response.body);
         throw Exception(
@@ -130,7 +130,7 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        _mockUser = UserModel.fromJson(body['user'], body['alertAccess']);
+        _mockUser = UserModel.fromJson(body['user']);
         _isMockLoggedIn = true;
         return _mockUser!;
       } else {
@@ -170,7 +170,7 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        return UserModel.fromJson(body['user'], body['alertAccess']);
+        return UserModel.fromJson(body['user']);
       } else {
         final errBody = jsonDecode(response.body);
         throw Exception(errBody['message'] ?? 'Backend profile sync failed.');
@@ -197,7 +197,7 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        _mockUser = UserModel.fromJson(body['user'], body['alertAccess']);
+        _mockUser = UserModel.fromJson(body['user']);
         _isMockLoggedIn = true;
         return _mockUser!;
       } else {
@@ -220,7 +220,7 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
-      return UserModel.fromJson(body['user'], body['alertAccess']);
+      return UserModel.fromJson(body['user']);
     } else {
       final errBody = jsonDecode(response.body);
       throw Exception(errBody['message'] ?? 'Backend profile sync failed.');

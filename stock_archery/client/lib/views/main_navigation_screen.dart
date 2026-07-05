@@ -8,6 +8,7 @@ import 'package:client/views/settings_view.dart';
 import 'package:client/views/stocks_view.dart';
 import 'package:client/views/subscription_view.dart';
 import 'package:client/views/video_list_view.dart';
+import 'package:client/views/alerts_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -32,6 +33,7 @@ class MainNavigationScreen extends ConsumerWidget {
       const StocksView(),
       const AiBotView(),
       const BrokersView(),
+      const AlertsView(),
       const SubscriptionView(),
     ];
 
@@ -195,6 +197,17 @@ class MainNavigationScreen extends ConsumerWidget {
                 child: Icon(Icons.account_balance, size: 24),
               ),
               label: 'Brokers',
+            ),
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.notifications_active_outlined, size: 24),
+              ),
+              activeIcon: Padding(
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.notifications_active, size: 24),
+              ),
+              label: 'Alerts',
             ),
             BottomNavigationBarItem(
               icon: Padding(

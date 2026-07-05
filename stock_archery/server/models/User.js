@@ -37,6 +37,30 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  isSOB_alert_premium: {
+    type: Boolean,
+    default: false
+  },
+  SOB_alert_expiresAt: {
+    type: Date,
+    default: null
+  },
+  isXaud_alert_premium: {
+    type: Boolean,
+    default: false
+  },
+  Xaud_alert_expiresAt: {
+    type: Date,
+    default: null
+  },
+  isCrypto_alert_premium: {
+    type: Boolean,
+    default: false
+  },
+  Crypto_alert_expiresAt: {
+    type: Date,
+    default: null
+  },
   fcmTokens: [{
     token: { type: String, required: true },
     deviceId: { type: String, required: true },

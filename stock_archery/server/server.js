@@ -15,6 +15,7 @@ const userRoutes = require('./routes/userRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const alertRoutes = require('./routes/alertRoutes');
 
 const app = express();
 app.use(cors());
@@ -38,6 +39,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api', chatRoutes); // /api/chat and /api/chart-analysis
 app.use('/api', notificationRoutes); // /api/test/push and /api/admin/push/broadcast
+app.use('/api/alerts', alertRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
