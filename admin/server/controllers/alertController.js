@@ -34,7 +34,7 @@ export const getAlertsByCategory = async (req, res) => {
   }
 
   try {
-    const alerts = await AlertPost.find({ category }).sort({ createdAt: 1 });
+    const alerts = await AlertPost.find({ category }).sort({ createdAt: -1 });
     res.json({ status: "success", alerts });
   } catch (err) {
     console.error("Error fetching alerts:", err.message);
