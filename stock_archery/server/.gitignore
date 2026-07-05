@@ -2,3 +2,4 @@ node_modules
 # .gitignore
 
 .env
+firebase-service-account.json
