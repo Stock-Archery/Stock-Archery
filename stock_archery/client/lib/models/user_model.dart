@@ -32,7 +32,7 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json, [Map<String, dynamic>? alertAccess]) {
-    final alerts = alertAccess ?? {};
+    final alerts = (alertAccess != null && alertAccess.isNotEmpty) ? alertAccess : json;
     return UserModel(
       firebaseUid: json['firebaseUid'] ?? '',
       name: json['name'] ?? '',

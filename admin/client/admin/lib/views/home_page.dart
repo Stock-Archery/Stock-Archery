@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'stock_selection_page.dart';
+import 'alert_send_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -56,7 +57,25 @@ class HomePage extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const StockSelectionPage()),
                 );
               },
-            )
+            ),
+            const SizedBox(height: 16),
+            _buildActionTile(
+              context,
+              title: "Send Alert",
+              subtitle: "Post chart analysis for SOB, XAUD, or Crypto",
+              icon: Icons.notifications_active_rounded,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFE9C349), Color(0xFFD4AF37)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AlertSendPage()),
+                );
+              },
+            ),
           ],
         ),
       ),

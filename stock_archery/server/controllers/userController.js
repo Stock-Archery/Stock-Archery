@@ -1,5 +1,4 @@
 const User = require('../models/User');
-const UserAlertAccess = require('../models/UserAlertAccess');
 
 exports.registerDevice = async (req, res) => {
   const { token, deviceId, platform } = req.body;
@@ -69,9 +68,9 @@ exports.updateAlertAccess = async (req, res) => {
   const { isSOB_alert_premium, isXaud_alert_premium, isCrypto_alert_premium } = req.body;
 
   try {
-    let alertAccess = await UserAlertAccess.findOne({ firebaseUid });
-    if (!alertAccess) {
-      alertAccess = new UserAlertAccess({ firebaseUid });
+    let user = await User.findOne({ firebaseUid });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
     const now = new Date();
@@ -80,11 +79,11 @@ exports.updateAlertAccess = async (req, res) => {
     if (isSOB_alert_premium !== undefined) {
       if (isSOB_alert_premium) {
         // Automatically set to exactly 1 year from now
-        alertAccess.isSOB_alert_premium = true;
-        alertAccess.SOB_alert_expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+        user.isSOB_alert_premium = true;
+        user.SOB_alert_expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
       } else {
-        alertAccess.isSOB_alert_premium = false;
-        alertAccess.SOB_alert_expiresAt = null;
+        user.isSOB_alert_premium = false;
+        user.SOB_alert_expiresAt = null;
       }
     }
 
@@ -92,11 +91,11 @@ exports.updateAlertAccess = async (req, res) => {
     if (isXaud_alert_premium !== undefined) {
       if (isXaud_alert_premium) {
         // Automatically set to exactly 1 year from now
-        alertAccess.isXaud_alert_premium = true;
-        alertAccess.Xaud_alert_expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+        user.isXaud_alert_premium = true;
+        user.Xaud_alert_expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
       } else {
-        alertAccess.isXaud_alert_premium = false;
-        alertAccess.Xaud_alert_expiresAt = null;
+        user.isXaud_alert_premium = false;
+        user.Xaud_alert_expiresAt = null;
       }
     }
 
@@ -104,20 +103,20 @@ exports.updateAlertAccess = async (req, res) => {
     if (isCrypto_alert_premium !== undefined) {
       if (isCrypto_alert_premium) {
         // Automatically set to exactly 1 year from now
-        alertAccess.isCrypto_alert_premium = true;
-        alertAccess.Crypto_alert_expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+        user.isCrypto_alert_premium = true;
+        user.Crypto_alert_expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
       } else {
-        alertAccess.isCrypto_alert_premium = false;
-        alertAccess.Crypto_alert_expiresAt = null;
+        user.isCrypto_alert_premium = false;
+        user.Crypto_alert_expiresAt = null;
       }
     }
 
-    await alertAccess.save();
+    await user.save();
 
     res.json({
       status: 'success',
       message: 'User alert access updated successfully',
-      alertAccess
+      user
     });
   } catch (err) {
     console.error('Error updating user alert access:', err);
