@@ -69,7 +69,8 @@ class StocksView extends ConsumerWidget {
                           color: AppColors.goldBright,
                           size: 28,
                         ),
-                        onPressed: () => ref.refresh(recommendationsProvider.future),
+                        onPressed: () =>
+                            ref.refresh(recommendationsProvider.future),
                         tooltip: 'Refresh Recommendations',
                       ),
                     ),
@@ -89,12 +90,15 @@ class StocksView extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Text(
                           'POTENTIAL HIGH-MOVEMENT STOCKS FOR',
-                          style: AppTypography.labelSm(
-                            color: AppColors.subtleGrey.withValues(alpha: 0.8),
-                          ).copyWith(
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.8,
-                          ),
+                          style:
+                              AppTypography.labelSm(
+                                color: AppColors.subtleGrey.withValues(
+                                  alpha: 0.8,
+                                ),
+                              ).copyWith(
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.8,
+                              ),
                         ),
                       ],
                     ),

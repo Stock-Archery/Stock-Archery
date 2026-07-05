@@ -1,5 +1,6 @@
 const axios = require('axios');
 const User = require('../models/User');
+const UserAlertAccess = require('../models/UserAlertAccess');
 
 exports.sendOtp = async (req, res) => {
   const { phoneNumber } = req.body;
@@ -83,6 +84,41 @@ exports.syncUser = async (req, res) => {
       console.log(`🔄 User logged in and synced: ${email}`);
     }
 
+    // Find or create user alert access permissions
+    let alertAccess = await UserAlertAccess.findOne({ firebaseUid: uid });
+    if (!alertAccess) {
+      alertAccess = new UserAlertAccess({
+        firebaseUid: uid,
+        isSOB_alert_premium: false,
+        isXaud_alert_premium: false,
+        isCrypto_alert_premium: false
+      });
+      await alertAccess.save();
+      console.log(`🛡️ Initialized default alert access for: ${email}`);
+    } else {
+      // Check expirations dynamically
+      const now = new Date();
+      let accessUpdated = false;
+
+      if (alertAccess.isSOB_alert_premium && alertAccess.SOB_alert_expiresAt && alertAccess.SOB_alert_expiresAt < now) {
+        alertAccess.isSOB_alert_premium = false;
+        accessUpdated = true;
+      }
+      if (alertAccess.isXaud_alert_premium && alertAccess.Xaud_alert_expiresAt && alertAccess.Xaud_alert_expiresAt < now) {
+        alertAccess.isXaud_alert_premium = false;
+        accessUpdated = true;
+      }
+      if (alertAccess.isCrypto_alert_premium && alertAccess.Crypto_alert_expiresAt && alertAccess.Crypto_alert_expiresAt < now) {
+        alertAccess.isCrypto_alert_premium = false;
+        accessUpdated = true;
+      }
+
+      if (accessUpdated) {
+        await alertAccess.save();
+        console.log(`⏰ Automatically expired some alert subscriptions for: ${email}`);
+      }
+    }
+
     res.json({
       status: "success",
       user: {
@@ -93,6 +129,14 @@ exports.syncUser = async (req, res) => {
         location: user.location,
         isPremium: user.isPremium,
         premiumExpiresAt: user.premiumExpiresAt
+      },
+      alertAccess: {
+        isSOB_alert_premium: alertAccess.isSOB_alert_premium,
+        SOB_alert_expiresAt: alertAccess.SOB_alert_expiresAt,
+        isXaud_alert_premium: alertAccess.isXaud_alert_premium,
+        Xaud_alert_expiresAt: alertAccess.Xaud_alert_expiresAt,
+        isCrypto_alert_premium: alertAccess.isCrypto_alert_premium,
+        Crypto_alert_expiresAt: alertAccess.Crypto_alert_expiresAt
       }
     });
   } catch (err) {

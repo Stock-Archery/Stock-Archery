@@ -10,6 +10,8 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:purchases_flutter/models/purchases_configuration.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
@@ -121,6 +123,28 @@ void main() async {
       );
     }
   });
+
+  //revenue cat setup
+  // const revenueCatKey = String.fromEnvironment(
+  //   'REVENUECAT_API',
+  //   defaultValue: '',
+  // );
+
+  final revenueCatKey = dotenv.env['REVENUECAT_API'] ?? '';
+
+  if (revenueCatKey.isEmpty) {
+    debugPrint(
+      "⚠️ Warning: RevenueCat API Key is missing from environment variables!",
+    );
+  } else {
+    try {
+      // Configure RevenueCat securely only if key is present
+      await Purchases.configure(PurchasesConfiguration(revenueCatKey));
+      debugPrint('✅ RevenueCat configured successfully');
+    } catch (e) {
+      debugPrint('❌ RevenueCat configuration error: $e');
+    }
+  }
 
   runApp(const ProviderScope(child: MyApp()));
 }

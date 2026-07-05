@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../viewmodels/session_provider.dart';
 import 'login_view.dart';
 import 'main_navigation_screen.dart';
 
@@ -10,6 +11,9 @@ class AuthWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch sessionProvider to instantiate/manage the single-device login listener
+    ref.watch(sessionProvider);
+
     final authState = ref.watch(authProvider);
     final authService = ref.read(authServiceProvider);
 

@@ -47,6 +47,17 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final authState = ref.watch(authProvider);
     final isFirebaseConfigured = ref.read(authServiceProvider).isFirebaseAvailable;
 
+    if (authState.isKickedOut) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ToastUtil.showWarning(
+          context,
+          "Aapka account kisi aur device me login ho gaya hai!",
+          description: "Multiple device login is restricted.",
+        );
+        ref.read(authProvider.notifier).clearKickedOut();
+      });
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
