@@ -106,12 +106,7 @@ exports.syncUser = async (req, res) => {
       accessUpdated = true;
     }
 
-    // If user is premium, grant all alert access
-    if (user.isPremium) {
-      if (!user.isSOB_alert_premium) { user.isSOB_alert_premium = true; accessUpdated = true; }
-      if (!user.isXaud_alert_premium) { user.isXaud_alert_premium = true; accessUpdated = true; }
-      if (!user.isCrypto_alert_premium) { user.isCrypto_alert_premium = true; accessUpdated = true; }
-    }
+
 
     if (accessUpdated) {
       await user.save();
