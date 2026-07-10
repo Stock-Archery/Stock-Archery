@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/app_config.dart';
@@ -51,6 +54,7 @@ class AuthState {
 class AuthViewModel extends StateNotifier<AuthState> {
   final AuthService _authService;
   final Ref _ref;
+  StreamSubscription<DatabaseEvent>? _alertsSubscription; // Subscription for real-time alert updates
 
   AuthViewModel(this._authService, this._ref) : super(AuthState()) {
     _listenToAuthChanges();
@@ -60,6 +64,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
     if (_authService.isFirebaseAvailable) {
       _authService.authStateChanges.listen((firebaseUser) async {
         if (firebaseUser == null) {
+          _cancelAlertsSubscription(); // Cancel listener on logout
           state = AuthState(user: null);
         } else {
           // If a firebase session already exists, sync with backend to get MongoDB profile
@@ -80,6 +85,9 @@ class AuthViewModel extends StateNotifier<AuthState> {
             final response = await _authService.syncProfile(idToken);
 
             state = AuthState(user: response, isLoading: false);
+
+            // Start listening to real-time premium updates from Firebase Realtime Database
+            _listenToAlertAccessChanges(firebaseUser.uid);
 
             // Register FCM token now that user is synced
             try {
@@ -222,6 +230,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true);
     debugPrint('[AuthViewModel] Executing manual logout.');
 
+    _cancelAlertsSubscription(); // Cancel real-time subscription on logout
+
     // Clear local session ID from shared preferences
     await _ref.read(sessionServiceProvider).clearLocalSession();
 
@@ -239,6 +249,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
     debugPrint(
       '[AuthViewModel] 🚨 Executing force logout due to duplicate active session.',
     );
+    _cancelAlertsSubscription(); // Cancel real-time subscription on logout
     await _authService.logout();
 
     //revenue cat se logout
@@ -257,6 +268,60 @@ class AuthViewModel extends StateNotifier<AuthState> {
   /// Clear active error banner
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  /// Explicit sync with backend database to pull latest user profile values
+  Future<void> syncProfile() async {
+    // Check if Firebase is available and there is a currently authenticated Firebase user
+    if (_authService.isFirebaseAvailable && FirebaseAuth.instance.currentUser != null) {
+      try {
+        final idToken = await FirebaseAuth.instance.currentUser!.getIdToken() ?? '';
+        final response = await _authService.syncProfile(idToken);
+        state = state.copyWith(user: response);
+      } catch (e) {
+        debugPrint('[AuthViewModel] Manual sync failed: $e');
+      }
+    }
+  }
+
+  // Register real-time database listener for subscription flags
+  void _listenToAlertAccessChanges(String uid) {
+    _cancelAlertsSubscription();
+    try {
+      final ref = FirebaseDatabase.instance.ref("user_alerts/$uid");
+      debugPrint('[AuthViewModel] Registering RTDB listener to Firebase path: user_alerts/$uid');
+      _alertsSubscription = ref.onValue.listen((DatabaseEvent event) {
+        if (event.snapshot.value != null && state.user != null) {
+          final Map<dynamic, dynamic> data = event.snapshot.value as Map<dynamic, dynamic>;
+          final isSOB = data['isSOB_alert_premium'] ?? false;
+          final isXaud = data['isXaud_alert_premium'] ?? false;
+          final isCrypto = data['isCrypto_alert_premium'] ?? false;
+          
+          debugPrint('[AuthViewModel] RTDB Alert Access updated: SOB=$isSOB, XAUD=$isXaud, Crypto=$isCrypto');
+          
+          state = state.copyWith(
+            user: state.user!.copyWith(
+              isSOBAlertPremium: isSOB,
+              isXaudAlertPremium: isXaud,
+              isCryptoAlertPremium: isCrypto,
+            ),
+          );
+        }
+      }, onError: (err) {
+        debugPrint('[AuthViewModel] ❌ Error in alert access RTDB listener: $err');
+      });
+    } catch (e) {
+      debugPrint('[AuthViewModel] ❌ Failed to start alert access listener: $e');
+    }
+  }
+
+  // Safely dispose of Realtime Database listener
+  void _cancelAlertsSubscription() {
+    if (_alertsSubscription != null) {
+      _alertsSubscription!.cancel();
+      _alertsSubscription = null;
+      debugPrint('[AuthViewModel] Alert access listener subscription cancelled.');
+    }
   }
 }
 

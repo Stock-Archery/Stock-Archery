@@ -1,5 +1,7 @@
 const axios = require('axios');
 const User = require('../models/User');
+// Import Firebase Admin for Realtime Database synchronization
+const { admin } = require('../config/firebase');
 
 exports.sendOtp = async (req, res) => {
   const { phoneNumber } = req.body;
@@ -93,6 +95,14 @@ exports.syncUser = async (req, res) => {
     const now = new Date();
     let accessUpdated = false;
 
+    // Ensure all premium access fields exist for older users in database
+    if (user._doc && user._doc.isSOB_alert_premium === undefined) { user.isSOB_alert_premium = false; accessUpdated = true; }
+    if (user._doc && user._doc.SOB_alert_expiresAt === undefined) { user.SOB_alert_expiresAt = null; accessUpdated = true; }
+    if (user._doc && user._doc.isXaud_alert_premium === undefined) { user.isXaud_alert_premium = false; accessUpdated = true; }
+    if (user._doc && user._doc.Xaud_alert_expiresAt === undefined) { user.Xaud_alert_expiresAt = null; accessUpdated = true; }
+    if (user._doc && user._doc.isCrypto_alert_premium === undefined) { user.isCrypto_alert_premium = false; accessUpdated = true; }
+    if (user._doc && user._doc.Crypto_alert_expiresAt === undefined) { user.Crypto_alert_expiresAt = null; accessUpdated = true; }
+
     if (user.isSOB_alert_premium && user.SOB_alert_expiresAt && user.SOB_alert_expiresAt < now) {
       user.isSOB_alert_premium = false;
       accessUpdated = true;
@@ -110,7 +120,21 @@ exports.syncUser = async (req, res) => {
 
     if (accessUpdated) {
       await user.save();
-      console.log(`⏰ Updated alert subscriptions/expirations for: ${email}`);
+      console.log(`⏰ Updated alert subscriptions/expirations in MongoDB for: ${email}`);
+
+      // Sync the updated alert premium flags to Firebase Realtime Database (non-blocking)
+      if (admin.apps.length > 0) {
+        admin.database().ref(`user_alerts/${uid}`).set({
+          isSOB_alert_premium: user.isSOB_alert_premium,
+          isXaud_alert_premium: user.isXaud_alert_premium,
+          isCrypto_alert_premium: user.isCrypto_alert_premium,
+          updatedAt: new Date().toISOString()
+        }).then(() => {
+          console.log(`📡 Expiration/Sync alert flags synced to Firebase RTDB for user: ${uid}`);
+        }).catch((rtdbErr) => {
+          console.error(`❌ Failed to sync updated flags to Firebase RTDB for ${uid}:`, rtdbErr.message);
+        });
+      }
     }
 
     res.json({

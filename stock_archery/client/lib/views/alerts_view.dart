@@ -197,6 +197,8 @@ class _AlertFeed extends ConsumerWidget {
 
         return RefreshIndicator(
           onRefresh: () async {
+            // Force sync profile settings on manual pull-to-refresh to pull latest database values
+            await ref.read(authProvider.notifier).syncProfile();
             ref.invalidate(alertsProvider(category));
           },
           color: AppColors.goldBright,

@@ -1,4 +1,7 @@
 const User = require('../models/User');
+// Import Firebase Admin for Realtime Database synchronization
+const { admin } = require('../config/firebase');
+
 
 exports.registerDevice = async (req, res) => {
   const { token, deviceId, platform } = req.body;
@@ -112,6 +115,20 @@ exports.updateAlertAccess = async (req, res) => {
     }
 
     await user.save();
+
+    // Sync the updated alert premium flags to Firebase Realtime Database for real-time app updates (non-blocking)
+    if (admin.apps.length > 0) {
+      admin.database().ref(`user_alerts/${firebaseUid}`).set({
+        isSOB_alert_premium: user.isSOB_alert_premium,
+        isXaud_alert_premium: user.isXaud_alert_premium,
+        isCrypto_alert_premium: user.isCrypto_alert_premium,
+        updatedAt: new Date().toISOString()
+      }).then(() => {
+        console.log(`📡 Real-time premium status synced to Firebase RTDB for user: ${firebaseUid}`);
+      }).catch((rtdbErr) => {
+        console.error(`❌ Failed to sync premium status to Firebase RTDB for ${firebaseUid}:`, rtdbErr.message);
+      });
+    }
 
     res.json({
       status: 'success',

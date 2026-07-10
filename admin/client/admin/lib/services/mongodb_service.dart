@@ -9,18 +9,19 @@ class MongoDBService {
   MongoDBService._internal();
 
   Db? _db;
-  
+
   // Use environment variables for sensitive data
   // WARNING: Connecting directly to MongoDB from a mobile client is insecure.
   // In production, all database operations should be moved to the backend server.
   static String get mongoUri => dotenv.get('mongoUri', fallback: '');
   static const String collectionName = "recommendations";
   static const String fnoCollectionName = "fnostocks";
-  static String get serverUrl => dotenv.get('SERVER_URL', fallback: 'http://localhost:3000');
+  static String get serverUrl =>
+      dotenv.get('SERVER_URL', fallback: 'http://localhost:3000');
 
   Future<void> connect() async {
     if (_db != null && _db!.isConnected) return;
-    
+
     try {
       _db = await Db.create(mongoUri);
       await _db!.open();
@@ -33,25 +34,23 @@ class MongoDBService {
   Future<void> updateRecommendations(List<String> stocks) async {
     await connect();
     final collection = _db!.collection(collectionName);
-    
+
     // We update the document with type 'current_recommendations'
-    await collection.update(
-      where.eq('type', 'current_recommendations'),
-      {
-        '\$set': {
-          'stocks': stocks,
-          'updatedAt': DateTime.now().toIso8601String(),
-        }
+    await collection.update(where.eq('type', 'current_recommendations'), {
+      '\$set': {
+        'stocks': stocks,
+        'updatedAt': DateTime.now().toIso8601String(),
       },
-      upsert: true,
-    );
+    }, upsert: true);
   }
 
   Future<List<String>> getRecommendations() async {
     await connect();
     final collection = _db!.collection(collectionName);
-    final doc = await collection.findOne(where.eq('type', 'current_recommendations'));
-    
+    final doc = await collection.findOne(
+      where.eq('type', 'current_recommendations'),
+    );
+
     if (doc != null && doc['stocks'] != null) {
       return List<String>.from(doc['stocks']);
     }
@@ -62,7 +61,7 @@ class MongoDBService {
     await connect();
     final collection = _db!.collection(fnoCollectionName);
     final docs = await collection.find().toList();
-    
+
     return docs.map((doc) => doc['symbol'] as String).toList();
   }
 
@@ -72,6 +71,39 @@ class MongoDBService {
       return response.statusCode == 200;
     } catch (e) {
       print("Error triggering refresh: $e");
+      return false;
+    }
+  }
+
+  // Search user by email or phone number in MongoDB directly
+  Future<Map<String, dynamic>?> searchUser(String query) async {
+    await connect();
+    final collection = _db!.collection('users');
+    final queryStr = query.trim();
+
+    // Search by lowercase email or exact phone number
+    final doc = await collection.findOne(
+      where
+          .eq('email', queryStr.toLowerCase())
+          .or(where.eq('phoneNumber', queryStr)),
+    );
+    return doc;
+  }
+
+  // Update user alert access by calling the backend API
+  Future<bool> updateUserAlertAccess(
+    String firebaseUid,
+    Map<String, bool> updates,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$serverUrl/api/user/alert-access/$firebaseUid'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(updates),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error updating user alert access: $e");
       return false;
     }
   }
