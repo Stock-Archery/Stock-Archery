@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:client/models/alert_post.dart';
+import 'package:client/models/video_model.dart';
 import 'package:client/utils/design_system/design_system.dart';
 import 'package:client/viewmodels/alerts_provider.dart';
 import 'package:client/viewmodels/auth_viewmodel.dart';
+import 'package:client/views/video_player_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -104,7 +106,7 @@ class AlertsView extends ConsumerWidget {
           // Content
           Expanded(
             child: isLocked
-                ? _buildLockedState(selectedCategory)
+                ? _buildLockedState(context, selectedCategory)
                 : _AlertFeed(category: selectedCategory),
           ),
         ],
@@ -112,54 +114,214 @@ class AlertsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildLockedState(String category) {
+  Widget _buildLockedState(BuildContext context, String category) {
+    final introVideo = _categoryIntroVideos[category];
+    final freeAccessVideo = _categoryFreeAccessVideos[category];
+
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.goldBright.withValues(alpha: 0.1),
-                border: Border.all(
-                  color: AppColors.goldBright.withValues(alpha: 0.3),
-                  width: 1.5,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.goldBright.withValues(alpha: 0.1),
+                  border: Border.all(
+                    color: AppColors.goldBright.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.lock_outline,
+                  color: AppColors.goldBright,
+                  size: 36,
                 ),
               ),
-              child: const Icon(
-                Icons.lock_outline,
-                color: AppColors.goldBright,
-                size: 36,
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Unlock $category Alerts',
+                style: GoogleFonts.montserrat(
+                  color: AppColors.onSurface,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Unlock $category Alerts',
-              style: GoogleFonts.montserrat(
-                color: AppColors.onSurface,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Contact support to get premium access for $category alerts.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 14,
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Contact support to get premium access for $category alerts.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                color: AppColors.onSurfaceVariant,
-                fontSize: 14,
-              ),
-            ),
-          ],
+              if (introVideo != null) ...[
+                const SizedBox(height: AppSpacing.xl),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VideoPlayerScreen(video: introVideo),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.md,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.metallicGold.withValues(alpha: 0.15),
+                          AppColors.goldBright.withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadii.base),
+                      border: Border.all(
+                        color: AppColors.goldBright.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.play_circle_outline,
+                          color: AppColors.goldBright,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Click to know about $category alerts',
+                          style: GoogleFonts.inter(
+                            color: AppColors.goldBright,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              if (freeAccessVideo != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            VideoPlayerScreen(video: freeAccessVideo),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.md,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.metallicGold.withValues(alpha: 0.15),
+                          AppColors.goldBright.withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadii.base),
+                      border: Border.all(
+                        color: AppColors.goldBright.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.play_circle_outline,
+                          color: AppColors.goldBright,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Want free access of $category alerts?',
+                          style: GoogleFonts.inter(
+                            color: AppColors.goldBright,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
+final Map<String, VideoModel> _categoryIntroVideos = {
+  'SOB': VideoModel(
+    title: 'About SOB Alerts',
+    videoId: 'VHg3TFRsUME',
+    thumbnail: 'https://img.youtube.com/vi/VHg3TFRsUME/0.jpg',
+    description:
+        'Learn how to use SOB alerts for trading and maximize your profits.',
+  ),
+  'XAUD': VideoModel(
+    title: 'About XAUD Alerts',
+    videoId: 'e1AkQf36duw',
+    thumbnail: 'https://img.youtube.com/vi/e1AkQf36duw/0.jpg',
+    description: 'Learn how to use XAUD alerts for gold trading.',
+  ),
+  'Crypto': VideoModel(
+    title: 'About Crypto Alerts',
+    videoId: 'bDLYO5D7RoE',
+    thumbnail: 'https://img.youtube.com/vi/bDLYO5D7RoE/0.jpg',
+    description: 'Learn how to use Crypto alerts for digital asset trading.',
+  ),
+};
+
+final Map<String, VideoModel> _categoryFreeAccessVideos = {
+  'SOB': VideoModel(
+    title: 'How to get free SOB Alerts',
+    videoId:
+        'E1vwRZdTkvg', // Replace with user's specific video ID if different
+    thumbnail: 'https://img.youtube.com/vi/E1vwRZdTkvg/0.jpg',
+    description: 'Learn how to get free access to SOB alerts.',
+  ),
+  'XAUD': VideoModel(
+    title: 'How to get free XAUD Alerts',
+    videoId:
+        'u5TIlHaGxUs', // Replace with user's specific video ID if different
+    thumbnail: 'https://img.youtube.com/vi/u5TIlHaGxUs/0.jpg',
+    description: 'Learn how to get free access to XAUD alerts.',
+  ),
+  'Crypto': VideoModel(
+    title: 'How to get free Crypto Alerts',
+    videoId:
+        'bDLYO5D7RoE', // Replace with user's specific video ID if different
+    thumbnail: 'https://img.youtube.com/vi/bDLYO5D7RoE/0.jpg',
+    description: 'Learn how to get free access to Crypto alerts.',
+  ),
+};
 
 class _AlertFeed extends ConsumerWidget {
   final String category;
@@ -216,9 +378,8 @@ class _AlertFeed extends ConsumerWidget {
           ),
         );
       },
-      loading: () => Center(
-        child: CircularProgressIndicator(color: AppColors.goldBright),
-      ),
+      loading: () =>
+          Center(child: CircularProgressIndicator(color: AppColors.goldBright)),
       error: (err, stack) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -363,10 +524,7 @@ class _FullScreenImage extends StatelessWidget {
         minScale: 0.5,
         maxScale: 4.0,
         child: Center(
-          child: Image.memory(
-            base64Decode(imageBase64),
-            fit: BoxFit.contain,
-          ),
+          child: Image.memory(base64Decode(imageBase64), fit: BoxFit.contain),
         ),
       ),
     );

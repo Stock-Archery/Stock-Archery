@@ -31,7 +31,10 @@ class _BrokersViewState extends State<BrokersView> {
       SnackBar(
         content: Text(
           "$broker integration is coming soon! Stay tuned.",
-          style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: AppColors.onSurface),
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w500,
+            color: AppColors.onSurface,
+          ),
         ),
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.surfaceContainerHigh,
@@ -55,7 +58,9 @@ class _BrokersViewState extends State<BrokersView> {
               // Title / Description
               Text(
                 "Broker Partners",
-                style: AppTypography.headlineLgMobile(color: AppColors.onSurface),
+                style: AppTypography.headlineLgMobile(
+                  color: AppColors.onSurface,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -75,16 +80,55 @@ class _BrokersViewState extends State<BrokersView> {
               _buildHowToEarnGrid(),
               const SizedBox(height: 32),
 
+              // Fill Form to Claim Benefits Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () =>
+                      _launchUrl("https://forms.gle/dKjcY2FPy534AC2o7"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.goldBright,
+                    foregroundColor: AppColors.onPrimary,
+                    elevation: 4,
+                    shadowColor: AppColors.goldBright.withOpacity(0.4),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.assignment_outlined, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Fill Form to Claim Benefits",
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
               // Broker Cards
               _buildBrokerCard(
                 name: "Fyers",
                 logoAsset: "assets/logos/fyers.jpeg",
-                description: "Focus on long-term investing with zero brokerage.",
+                description:
+                    "Focus on long-term investing with zero brokerage.",
                 color: const Color(0xFF2563EB),
                 isPopular: true,
                 isWide: false,
-                onTap: () => _launchUrl("https://signup.fyers.in/?utm-source=AP-Leads&utm-medium=AP3324"),
-                onVerifyTap: () => _launchUrl("https://forms.gle/M9pksV9eWH2sjqPB6"),
+                onTap: () => _launchUrl(
+                  "https://signup.fyers.in/?utm-source=AP-Leads&utm-medium=AP3324",
+                ),
+                onVerifyTap: () =>
+                    _launchUrl("https://forms.gle/M9pksV9eWH2sjqPB6"),
               ),
               _buildBrokerCard(
                 name: "CoinDCX",
@@ -94,7 +138,8 @@ class _BrokersViewState extends State<BrokersView> {
                 isPopular: false,
                 isWide: true,
                 onTap: () => _launchUrl("https://invite.coindcx.com/46915912"),
-                onVerifyTap: () => _launchUrl("https://forms.gle/idJxF6auWfS7Yiy69"),
+                onVerifyTap: () =>
+                    _launchUrl("https://forms.gle/idJxF6auWfS7Yiy69"),
               ),
               _buildBrokerCard(
                 name: "Angel One",
@@ -141,22 +186,22 @@ class _BrokersViewState extends State<BrokersView> {
       {
         "icon": Icons.person_add_alt_1_outlined,
         "title": "Open Account",
-        "desc": "Open a new trading account via the broker link."
+        "desc": "Open a new trading account via the broker link.",
       },
       {
         "icon": Icons.account_balance_wallet_outlined,
         "title": "Add Funds",
-        "desc": "Add min ₹100 and execute first trade within 7 days."
+        "desc": "Add min ₹100 and execute first trade within 7 days.",
       },
       {
         "icon": Icons.crop_free_outlined,
         "title": "Take Screenshot",
-        "desc": "Capture client ID and trade confirmation screen."
+        "desc": "Capture client ID and trade confirmation screen.",
       },
       {
         "icon": Icons.check_circle_outline_outlined,
         "title": "Submit Details",
-        "desc": "Upload screenshots through form to claim benefit."
+        "desc": "Upload screenshots through form to claim benefit.",
       },
     ];
 
@@ -311,16 +356,25 @@ class _BrokersViewState extends State<BrokersView> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: onVerifyTap ?? () => _showComingSoon(context, name),
+                    onPressed:
+                        onVerifyTap ?? () => _showComingSoon(context, name),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.metallicGold, width: 1),
+                      side: const BorderSide(
+                        color: AppColors.metallicGold,
+                        width: 1,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       foregroundColor: AppColors.metallicGold,
                     ),
                     child: Text(
                       "Registered? Verify",
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -333,11 +387,16 @@ class _BrokersViewState extends State<BrokersView> {
                       foregroundColor: AppColors.onPrimary,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     child: Text(
                       "Open Account",
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -388,12 +447,17 @@ class _BrokersViewState extends State<BrokersView> {
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: AppColors.metallicGold, width: 1),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               foregroundColor: AppColors.metallicGold,
             ),
             child: Text(
               "Contact Support",
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
