@@ -14,8 +14,7 @@ class VideoListView extends ConsumerStatefulWidget {
 }
 
 class _VideoListViewState extends ConsumerState<VideoListView> {
-  // int _selectedLevel = 2; // 0=Beginner 1=Intermediate 2=Advanced
-  // final List<String> _levels = ['Beginner', 'Intermediate', 'Advanced'];
+  String _selectedTab = 'Free classes';
 
   @override
   Widget build(BuildContext context) {
@@ -25,135 +24,204 @@ class _VideoListViewState extends ConsumerState<VideoListView> {
 
     return Scaffold(
       backgroundColor: AppColors.deepObsidian,
-      body: CustomScrollView(
-        slivers: [
-          // ── SliverAppBar ─────────────────────────────────────────────────
-          // SliverAppBar(
-          //   expandedHeight: 0,
-          //   floating: true,
-          //   snap: true,
-          //   pinned: false,
-          //   backgroundColor: AppColors.deepObsidian.withOpacity(0.92),
-          //   elevation: 0,
-          //   automaticallyImplyLeading: false,
-          //   flexibleSpace: null,
-          // ),
-
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           // ── Hero Header ───────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Strategy Videos',
-                    style: GoogleFonts.montserrat(
-                      color: AppColors.metallicGold,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                    ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Strategy Videos',
+                  style: GoogleFonts.montserrat(
+                    color: AppColors.metallicGold,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Master the markets with our elite curated curriculum.',
-                    style: GoogleFonts.inter(
-                      color: AppColors.subtleGrey,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                    ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Master the markets with our elite curated curriculum.',
+                  style: GoogleFonts.inter(
+                    color: AppColors.subtleGrey,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
 
-          // ── Free Video Cards ───────────────────────────────────────────────
-          SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final video = videos[index];
-              return _VideoCard(
-                video: video,
-                index: index,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => VideoPlayerScreen(video: video),
+          // ── Category Tabs ──────────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.containerMarginMobile,
+              vertical: AppSpacing.md,
+            ),
+            child: Row(
+              children: ['Free classes', 'XAUD', 'SOB'].map((tab) {
+                final isSelected = _selectedTab == tab;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedTab = tab;
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.goldBright
+                            : AppColors.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(AppRadii.base),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.goldBright
+                              : AppColors.outlineVariant,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            tab,
+                            style: GoogleFonts.inter(
+                              color: isSelected
+                                  ? AppColors.pureBlack
+                                  : AppColors.onSurfaceVariant,
+                              fontSize: 13,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                },
-              );
-            }, childCount: videos.length),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
 
-          // ── Premium Locked Card ───────────────────────────────────────────
-          SliverToBoxAdapter(child: _PremiumLockedCard(isPremium: isPremium)),
+          // ── Divider ────────────────────────────────────────────────────────
+          Container(
+            height: 1,
+            color: AppColors.subtleGrey.withValues(alpha: 0.12),
+          ),
 
-          // ── Browse by Level ───────────────────────────────────────────────
-          // SliverToBoxAdapter(
-          //   child: Padding(
-          //     padding: const EdgeInsets.fromLTRB(20, 32, 20, 12),
-          //     child: Text(
-          //       'Browse by Level',
-          //       style: GoogleFonts.montserrat(
-          //         color: AppColors.onSurface,
-          //         fontSize: 20,
-          //         fontWeight: FontWeight.w600,
-          //         letterSpacing: -0.3,
-          //       ),
-          //     ),
-          //   ),
-          // ),
-
-          // SliverToBoxAdapter(
-          //   child: Padding(
-          //     padding: const EdgeInsets.symmetric(horizontal: 20),
-          //     child: Row(
-          //       children: List.generate(_levels.length, (i) {
-          //         final selected = _selectedLevel == i;
-          //         return Padding(
-          //           padding: const EdgeInsets.only(right: 10),
-          //           child: GestureDetector(
-          //             onTap: () => setState(() => _selectedLevel = i),
-          //             child: AnimatedContainer(
-          //               duration: const Duration(milliseconds: 200),
-          //               padding: const EdgeInsets.symmetric(
-          //                 horizontal: 18,
-          //                 vertical: 10,
-          //               ),
-          //               decoration: BoxDecoration(
-          //                 color: selected ? AppColors.metallicGold : AppColors.surfaceContainer,
-          //                 borderRadius: BorderRadius.circular(24),
-          //                 border: Border.all(
-          //                   color: selected
-          //                       ? AppColors.metallicGold
-          //                       : AppColors.outlineVariant.withOpacity(0.5),
-          //                   width: 1,
-          //                 ),
-          //               ),
-          //               child: Text(
-          //                 _levels[i],
-          //                 style: GoogleFonts.inter(
-          //                   color: selected
-          //                       ? const Color(0xFF0B0E11)
-          //                       : AppColors.subtleGrey,
-          //                   fontSize: 13,
-          //                   fontWeight: selected
-          //                       ? FontWeight.w700
-          //                       : FontWeight.w500,
-          //                 ),
-          //               ),
-          //             ),
-          //           ),
-          //         );
-          //       }),
-          //     ),
-          //   ),
-          // ),
-          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+          // ── Content Area ───────────────────────────────────────────────────
+          Expanded(child: _buildContent(videos, isPremium)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildContent(List<dynamic> videos, bool isPremium) {
+    if (_selectedTab == 'Free classes') {
+      return ListView(
+        padding: const EdgeInsets.only(top: 8),
+        children: [
+          ...List.generate(videos.length, (index) {
+            final video = videos[index];
+            return _VideoCard(
+              video: video,
+              index: index,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => VideoPlayerScreen(video: video),
+                  ),
+                );
+              },
+            );
+          }),
+          _PremiumLockedCard(isPremium: isPremium),
+          const SizedBox(height: 40),
+        ],
+      );
+    } else {
+      return _buildComingSoonState(_selectedTab);
+    }
+  }
+
+  Widget _buildComingSoonState(String category) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.goldBright.withValues(alpha: 0.08),
+                border: Border.all(
+                  color: AppColors.goldBright.withValues(alpha: 0.25),
+                  width: 1.5,
+                ),
+              ),
+              child: const Icon(
+                Icons.hourglass_empty_rounded,
+                color: AppColors.goldBright,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              '$category Strategy',
+              style: GoogleFonts.montserrat(
+                color: AppColors.onSurface,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.metallicGold.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.metallicGold.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                'COMING SOON',
+                style: GoogleFonts.inter(
+                  color: AppColors.goldBright,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Text(
+                'We are designing elite strategy modules for $category. Stay tuned for expert insights and live trading sessions.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  color: AppColors.subtleGrey,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -195,7 +263,10 @@ class _VideoCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.pureBlack,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.subtleGrey.withOpacity(0.12), width: 1),
+          border: Border.all(
+            color: AppColors.subtleGrey.withOpacity(0.12),
+            width: 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,7 +402,10 @@ class _VideoCard extends StatelessWidget {
                 onPressed: onTap,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.metallicGold,
-                  side: const BorderSide(color: AppColors.metallicGold, width: 1.2),
+                  side: const BorderSide(
+                    color: AppColors.metallicGold,
+                    width: 1.2,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -351,7 +425,11 @@ class _VideoCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward, size: 16, color: AppColors.metallicGold),
+                    const Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: AppColors.metallicGold,
+                    ),
                   ],
                 ),
               ),
@@ -375,7 +453,10 @@ class _PremiumLockedCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.pureBlack,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.metallicGold.withOpacity(0.25), width: 1),
+        border: Border.all(
+          color: AppColors.metallicGold.withOpacity(0.25),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,7 +469,10 @@ class _PremiumLockedCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.metallicGold.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.metallicGold.withOpacity(0.40), width: 1),
+                border: Border.all(
+                  color: AppColors.metallicGold.withOpacity(0.40),
+                  width: 1,
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -475,7 +559,10 @@ class _PremiumLockedCard extends StatelessWidget {
                 const SizedBox(width: 5),
                 Text(
                   'Premium Exclusive • 45 mins',
-                  style: GoogleFonts.inter(color: AppColors.subtleGrey, fontSize: 12),
+                  style: GoogleFonts.inter(
+                    color: AppColors.subtleGrey,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -489,7 +576,9 @@ class _PremiumLockedCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.metallicGold,
                 foregroundColor: const Color(0xFF0B0E11),
-                disabledBackgroundColor: AppColors.metallicGold.withOpacity(0.4),
+                disabledBackgroundColor: AppColors.metallicGold.withOpacity(
+                  0.4,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
