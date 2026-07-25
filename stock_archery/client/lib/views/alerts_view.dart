@@ -4,11 +4,11 @@ import 'package:client/models/video_model.dart';
 import 'package:client/utils/design_system/design_system.dart';
 import 'package:client/viewmodels/alerts_provider.dart';
 import 'package:client/viewmodels/auth_viewmodel.dart';
-import 'package:client/views/video_player_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class AlertsView extends ConsumerWidget {
   const AlertsView({super.key});
@@ -164,11 +164,12 @@ class AlertsView extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xl),
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => VideoPlayerScreen(video: introVideo),
-                      ),
+                    showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      barrierColor: AppColors.pureBlack.withValues(alpha: 0.8),
+                      builder: (context) =>
+                          _VideoPopupDialog(video: introVideo),
                     );
                   },
                   child: Container(
@@ -218,12 +219,12 @@ class AlertsView extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            VideoPlayerScreen(video: freeAccessVideo),
-                      ),
+                    showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      barrierColor: AppColors.pureBlack.withValues(alpha: 0.8),
+                      builder: (context) =>
+                          _VideoPopupDialog(video: freeAccessVideo),
                     );
                   },
                   child: Container(
@@ -527,6 +528,126 @@ class _FullScreenImage extends StatelessWidget {
           child: Image.memory(base64Decode(imageBase64), fit: BoxFit.contain),
         ),
       ),
+    );
+  }
+}
+
+class _VideoPopupDialog extends StatefulWidget {
+  final VideoModel video;
+
+  const _VideoPopupDialog({required this.video});
+
+  @override
+  State<_VideoPopupDialog> createState() => _VideoPopupDialogState();
+}
+
+class _VideoPopupDialogState extends State<_VideoPopupDialog> {
+  late YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = YoutubePlayerController(
+      initialVideoId: widget.video.videoId,
+      flags: const YoutubePlayerFlags(
+        autoPlay: true,
+        mute: false,
+        enableCaption: true,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return YoutubePlayerBuilder(
+      player: YoutubePlayer(
+        controller: _controller,
+        showVideoProgressIndicator: true,
+        progressIndicatorColor: AppColors.metallicGold,
+        progressColors: const ProgressBarColors(
+          playedColor: AppColors.metallicGold,
+          handleColor: AppColors.goldBright,
+          bufferedColor: Colors.white24,
+          backgroundColor: Colors.white10,
+        ),
+      ),
+      builder: (context, player) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.pureBlack,
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              border: Border.all(
+                color: AppColors.goldBright.withValues(alpha: 0.15),
+                width: 1.5,
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                player,
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.video.title,
+                              style: GoogleFonts.montserrat(
+                                color: AppColors.onSurface,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: const Icon(
+                              Icons.close,
+                              color: AppColors.subtleGrey,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (widget.video.description.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.video.description,
+                          style: GoogleFonts.inter(
+                            color: AppColors.onSurfaceVariant,
+                            fontSize: 12,
+                            height: 1.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
