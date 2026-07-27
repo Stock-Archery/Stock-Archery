@@ -6,7 +6,8 @@ const initFirebase = () => {
     const serviceAccount = require('../firebase-service-account.json');
     if (serviceAccount.project_id && serviceAccount.project_id !== "YOUR_PROJECT_ID") {
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
+        credential: admin.credential.cert(serviceAccount),
+        databaseURL: "https://stock-archery-99-default-rtdb.firebaseio.com"
       });
       console.log("✅ Firebase Admin SDK initialized successfully");
     } else {
