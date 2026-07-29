@@ -259,8 +259,8 @@ class SubscriptionView extends ConsumerWidget {
               const SizedBox(height: AppSpacing.lg),
               _PlanCard(
                 price: localizedPrice,
-                isPremium: premiumState.isPremium,
-                onPressed: premiumState.isPremium
+                isPremium: premiumState.superPremium,
+                onPressed: premiumState.superPremium
                     ? null
                     : () => _showSubscriptionSheet(context, ref, activePackage),
               ),
