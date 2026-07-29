@@ -63,6 +63,93 @@ class AuthService {
     }
   }
 
+  /// Verify OTP only (for signup phone verification, no login)
+  Future<void> verifyOtpOnly(String phoneNumber, String otp) async {
+    final url = '$baseUrl/auth/verify-otp-only';
+    _log('verifyOtpOnly → POST $url');
+    _log('verifyOtpOnly → body: {"phoneNumber": "$phoneNumber", "otp": "$otp"}');
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phoneNumber': phoneNumber, 'otp': otp}),
+      );
+
+      _log('verifyOtpOnly ← status: ${response.statusCode}');
+      _log('verifyOtpOnly ← body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true) {
+          _log('verifyOtpOnly ✓ OTP verified');
+          return;
+        }
+        throw Exception(body['message'] ?? 'OTP verification failed');
+      } else {
+        final errBody = jsonDecode(response.body);
+        throw Exception(errBody['message'] ?? 'Invalid OTP');
+      }
+    } catch (e) {
+      _log('verifyOtpOnly ✗ Exception: ${e.toString()}');
+      if (e is Exception) rethrow;
+      throw Exception('OTP verification error: ${e.toString()}');
+    }
+  }
+
+  /// Verify OTP with server and login with existing account
+  Future<UserModel> loginWithOtp(String phoneNumber, String otp) async {
+    final url = '$baseUrl/auth/verify-otp';
+    _log('loginWithOtp → POST $url');
+    _log('loginWithOtp → body: {"phoneNumber": "$phoneNumber", "otp": "$otp"}');
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phoneNumber': phoneNumber, 'otp': otp}),
+      );
+
+      _log('loginWithOtp ← status: ${response.statusCode}');
+      _log('loginWithOtp ← body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true) {
+          final customToken = body['customToken'] as String?;
+          final userData = body['user'];
+
+          if (isFirebaseAvailable && customToken != null) {
+            // Sign in with Firebase custom token
+            _log('loginWithOtp → Signing in with Firebase custom token...');
+            await FirebaseAuth.instance.signInWithCustomToken(customToken);
+            _log('loginWithOtp ✓ Firebase sign-in successful');
+          } else {
+            _log('loginWithOtp → No custom token or Firebase unavailable, using mock mode');
+            _mockUser = UserModel.fromJson(userData);
+            _isMockLoggedIn = true;
+          }
+
+          return UserModel.fromJson(userData);
+        }
+        _log('loginWithOtp ✗ Server error: ${body['message']}');
+        throw Exception(body['message'] ?? 'OTP verification failed');
+      } else {
+        try {
+          final errBody = jsonDecode(response.body);
+          _log('loginWithOtp ✗ HTTP ${response.statusCode}: ${errBody['message']}');
+          throw Exception(errBody['message'] ?? 'OTP verification failed');
+        } catch (e) {
+          if (e is Exception) rethrow;
+          _log('loginWithOtp ✗ HTTP ${response.statusCode}: ${response.body}');
+          throw Exception('OTP verification failed');
+        }
+      }
+    } catch (e) {
+      _log('loginWithOtp ✗ Exception: ${e.toString()}');
+      if (e is Exception) rethrow;
+      throw Exception('OTP login error: ${e.toString()}');
+    }
+  }
+
   // Keep a local in-memory session for the Mock environment
   UserModel? _mockUser;
   bool _isMockLoggedIn = false;

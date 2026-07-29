@@ -135,18 +135,27 @@ class _SignupViewState extends ConsumerState<SignupView> {
     return _otpControllers.every((c) => c.text.isNotEmpty);
   }
 
-  void _verifyOtp() {
+  void _verifyOtp() async {
     final enteredOtp = _otpControllers.map((c) => c.text).join();
-    if (enteredOtp == _expectedOtp) {
+    final cleanPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    debugPrint('[log] [SignupView] _verifyOtp called, phone: $cleanPhone, otp: $enteredOtp');
+
+    setState(() { _otpError = null; });
+
+    final success = await ref.read(authProvider.notifier).verifyOtpOnly(cleanPhone, enteredOtp);
+
+    if (success) {
+      debugPrint('[log] [SignupView] Server-side OTP verified');
       setState(() {
         _currentStep = 2;
         _otpError = null;
       });
       ToastUtil.showSuccess(context, "Phone Number Verified");
     } else {
-      // setState(() {
-      //   _otpError = "Verification failed";
-      // });
+      debugPrint('[log] [SignupView] Server-side OTP verification failed');
+      setState(() {
+        _otpError = "Invalid OTP. Please try again.";
+      });
       ToastUtil.showError(context, "Wrong OTP!");
     }
   }
