@@ -167,6 +167,7 @@ exports.verifyOtp = async (req, res) => {
           Xaud_alert_expiresAt: user.Xaud_alert_expiresAt,
           isCrypto_alert_premium: user.isCrypto_alert_premium,
           Crypto_alert_expiresAt: user.Crypto_alert_expiresAt,
+          textChatCount: user.textChatCount || 0,
         }
       });
     } else {
@@ -281,7 +282,8 @@ exports.syncUser = async (req, res) => {
         isXaud_alert_premium: false,
         Xaud_alert_expiresAt: null,
         isCrypto_alert_premium: false,
-        Crypto_alert_expiresAt: null
+        Crypto_alert_expiresAt: null,
+        textChatCount: 0
       });
       await user.save();
       console.log(`👤 New user registered and synced in MongoDB: ${email}`);
@@ -376,7 +378,8 @@ exports.syncUser = async (req, res) => {
         isXaud_alert_premium: user.isXaud_alert_premium,
         Xaud_alert_expiresAt: user.Xaud_alert_expiresAt,
         isCrypto_alert_premium: user.isCrypto_alert_premium,
-        Crypto_alert_expiresAt: user.Crypto_alert_expiresAt
+        Crypto_alert_expiresAt: user.Crypto_alert_expiresAt,
+        textChatCount: user.textChatCount || 0
       }
     });
   } catch (err) {

@@ -7,6 +7,9 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:client/Features/payment/view_model/premium_provider.dart';
+import 'package:client/viewmodels/auth_viewmodel.dart';
+import 'package:client/viewmodels/navigation_viewmodel.dart';
 
 class AiBotView extends ConsumerStatefulWidget {
   const AiBotView({super.key});
@@ -271,7 +274,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
             ? _buildWelcomeScreen(isChart)
             : _buildMessageList(chatState.messages, viewModel, isChart, isLoading: chatState.isLoading),
         ),
-        _buildInputArea(viewModel, isChart),
+        _buildInputArea(viewModel, isChart, ref),
       ],
     );
   }
@@ -427,7 +430,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
     );
   }
 
-  Widget _buildInputArea(ChatViewModel viewModel, bool isChart) {
+  Widget _buildInputArea(ChatViewModel viewModel, bool isChart, WidgetRef ref) {
     final TextEditingController controller = TextEditingController();
 
     return Container(
@@ -508,12 +511,24 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                               );
                               return;
                             }
+
+                            final isPremium = ref.read(premiumProvider).superPremium;
+                            final userModel = ref.read(authProvider).user;
+                            final textChatCount = userModel?.textChatCount ?? 0;
+
+                            if (!isPremium) {
+                              if (isChart || (!isChart && textChatCount >= 5)) {
+                                _showPremiumDialog(ref, isChart);
+                                return;
+                              }
+                            }
+
                             final message = ChatMessage(
                               text: controller.text,
                               user: viewModel.user,
                               createdAt: DateTime.now(),
                             );
-                            viewModel.onSend(message, imageFile: isChart ? _selectedImage : null);
+                            viewModel.onSend(message, imageFile: isChart ? _selectedImage : null, isPremium: isPremium);
                             if (isChart) setState(() => _selectedImage = null);
                             controller.clear();
                           },
@@ -541,6 +556,72 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
               color: AppColors.subtleGrey.withValues(alpha: 0.8),
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPremiumDialog(WidgetRef ref, bool isChart) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.pureBlack,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.goldBright.withValues(alpha: 0.3)),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.workspace_premium, color: AppColors.goldBright),
+            const SizedBox(width: 8),
+            Text(
+              "Premium Feature",
+              style: GoogleFonts.montserrat(
+                color: AppColors.onSurface,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          isChart 
+              ? "Chart Analysis is exclusively available for premium members. Upgrade now to unlock this powerful tool."
+              : "You have used your 5 free AI text queries for life. Upgrade to Premium to get unlimited AI market insights.",
+          style: GoogleFonts.inter(
+            color: AppColors.subtleGrey,
+            fontSize: 14,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Cancel",
+              style: GoogleFonts.inter(
+                color: AppColors.subtleGrey,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.goldBright,
+              foregroundColor: AppColors.pureBlack,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              ref.read(navigationProvider.notifier).state = 4; // Navigate to SubscriptionView
+            },
+            child: Text(
+              "Upgrade",
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
             ),
           ),
         ],

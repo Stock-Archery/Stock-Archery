@@ -83,7 +83,11 @@ const userSchema = new mongoose.Schema({
     platform: { type: String },
     isActive: { type: Boolean, default: true },
     updatedAt: { type: Date, default: Date.now }
-  }]
+  }],
+  textChatCount: {
+    type: Number,
+    default: 0
+  }
 }, {
   timestamps: true,
   collection: 'users'

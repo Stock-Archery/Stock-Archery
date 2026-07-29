@@ -17,6 +17,7 @@ class UserModel {
   final DateTime? xaudAlertExpiresAt;
   final bool isCryptoAlertPremium;
   final DateTime? cryptoAlertExpiresAt;
+  final int textChatCount;
 
   UserModel({
     required this.firebaseUid,
@@ -35,6 +36,7 @@ class UserModel {
     this.xaudAlertExpiresAt,
     this.isCryptoAlertPremium = false,
     this.cryptoAlertExpiresAt,
+    this.textChatCount = 0,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json, [Map<String, dynamic>? alertAccess]) {
@@ -64,6 +66,7 @@ class UserModel {
       cryptoAlertExpiresAt: alerts['Crypto_alert_expiresAt'] != null
           ? DateTime.tryParse(alerts['Crypto_alert_expiresAt'])
           : null,
+      textChatCount: json['textChatCount'] ?? 0,
     );
   }
 
@@ -85,6 +88,7 @@ class UserModel {
       'Xaud_alert_expiresAt': xaudAlertExpiresAt?.toIso8601String(),
       'isCrypto_alert_premium': isCryptoAlertPremium,
       'Crypto_alert_expiresAt': cryptoAlertExpiresAt?.toIso8601String(),
+      'textChatCount': textChatCount,
     };
   }
 
@@ -105,6 +109,7 @@ class UserModel {
     DateTime? xaudAlertExpiresAt,
     bool? isCryptoAlertPremium,
     DateTime? cryptoAlertExpiresAt,
+    int? textChatCount,
   }) {
     return UserModel(
       firebaseUid: firebaseUid ?? this.firebaseUid,
@@ -123,6 +128,7 @@ class UserModel {
       xaudAlertExpiresAt: xaudAlertExpiresAt ?? this.xaudAlertExpiresAt,
       isCryptoAlertPremium: isCryptoAlertPremium ?? this.isCryptoAlertPremium,
       cryptoAlertExpiresAt: cryptoAlertExpiresAt ?? this.cryptoAlertExpiresAt,
+      textChatCount: textChatCount ?? this.textChatCount,
     );
   }
 }
