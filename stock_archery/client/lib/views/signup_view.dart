@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../utils/toast_util.dart';
-import '../services/app_config.dart';
+import '../utils/design_system/design_system.dart';
 
 class PhoneInputFormatter extends TextInputFormatter {
   @override
@@ -55,8 +54,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
   String? _selectedGender;
 
   // Step and OTP flow variables
-  int _currentStep =
-      1; // Step 1: Name & Phone verification, Step 2: Account details
+  int _currentStep = 1; // Step 1: Name & Phone verification, Step 2: Account details
   bool _otpSent = false;
   String? _expectedOtp;
   bool _sendOtpLoading = false;
@@ -88,12 +86,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
   void _sendOtp() async {
     final cleanPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
     debugPrint('[log] [SignupView] _sendOtp triggered, phone: $cleanPhone');
-    debugPrint('[log] [SignupView] baseUrl: ${AppConfig.baseUrl}');
-    debugPrint('[log] [SignupView] environment: ${AppConfig.environment}');
-    if (cleanPhone.length != 10) {
-      debugPrint('[log] [SignupView] Invalid phone length: ${cleanPhone.length}');
-      return;
-    }
+    if (cleanPhone.length != 10) return;
 
     setState(() {
       _sendOtpLoading = true;
@@ -102,9 +95,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
     });
 
     try {
-      debugPrint('[log] [SignupView] Calling authViewModel.sendOtp...');
       final otp = await ref.read(authProvider.notifier).sendOtp(cleanPhone);
-      debugPrint('[log] [SignupView] sendOtp returned: ${otp != null ? "OTP received" : "null"}');
       if (otp != null) {
         setState(() {
           _expectedOtp = otp;
@@ -123,7 +114,6 @@ class _SignupViewState extends ConsumerState<SignupView> {
         });
       }
     } catch (e) {
-      debugPrint('[log] [SignupView] _sendOtp exception: $e');
       setState(() {
         _sendOtpLoading = false;
         _otpError = e.toString().replaceAll("Exception: ", "");
@@ -138,21 +128,18 @@ class _SignupViewState extends ConsumerState<SignupView> {
   void _verifyOtp() async {
     final enteredOtp = _otpControllers.map((c) => c.text).join();
     final cleanPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    debugPrint('[log] [SignupView] _verifyOtp called, phone: $cleanPhone, otp: $enteredOtp');
 
     setState(() { _otpError = null; });
 
     final success = await ref.read(authProvider.notifier).verifyOtpOnly(cleanPhone, enteredOtp);
 
     if (success) {
-      debugPrint('[log] [SignupView] Server-side OTP verified');
+      ToastUtil.showSuccess(context, "Phone Number Verified");
       setState(() {
         _currentStep = 2;
         _otpError = null;
       });
-      ToastUtil.showSuccess(context, "Phone Number Verified");
     } else {
-      debugPrint('[log] [SignupView] Server-side OTP verification failed');
       setState(() {
         _otpError = "Invalid OTP. Please try again.";
       });
@@ -184,7 +171,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
       ToastUtil.showSuccess(
         context,
         "Account Created!",
-        description: "Welcome to ArrowAI.",
+        description: "Welcome to Stock Archery.",
       );
       Navigator.of(context).pop();
     }
@@ -195,12 +182,12 @@ class _SignupViewState extends ConsumerState<SignupView> {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.deepObsidian,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.deepObsidian,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.onSurface, size: 20),
           onPressed: () {
             if (_currentStep == 2) {
               setState(() {
@@ -238,21 +225,12 @@ class _SignupViewState extends ConsumerState<SignupView> {
         children: [
           Text(
             "Verify Phone",
-            style: GoogleFonts.inter(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: Colors.black,
-              letterSpacing: -1,
-            ),
+            style: AppTypography.headlineLg(color: AppColors.onSurface),
           ),
           const SizedBox(height: 8),
           Text(
-            "Step 1 of 2: Let's verify your identity via SMS code.",
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: Colors.grey[600],
-              height: 1.4,
-            ),
+            "Step 1 of 2: Verify your phone number via SMS OTP code.",
+            style: AppTypography.bodyMd(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 35),
 
@@ -261,26 +239,22 @@ class _SignupViewState extends ConsumerState<SignupView> {
               margin: const EdgeInsets.only(bottom: 20),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
-                border: Border.all(color: const Color(0xFFFEE2E2)),
+                color: AppColors.errorContainer.withOpacity(0.2),
+                border: Border.all(color: AppColors.errorContainer),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                  const Icon(Icons.error_outline, color: AppColors.error, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       _otpError!,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.red[800],
-                      ),
+                      style: AppTypography.bodyMd(color: AppColors.error),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 16, color: Colors.red),
+                    icon: const Icon(Icons.close, size: 16, color: AppColors.error),
                     onPressed: () => setState(() => _otpError = null),
                   ),
                 ],
@@ -290,19 +264,15 @@ class _SignupViewState extends ConsumerState<SignupView> {
           // Full Name
           Text(
             "Full Name",
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
+            style: AppTypography.labelSm(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _nameController,
             onChanged: (_) => setState(() {}),
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+            style: AppTypography.bodyMd(color: AppColors.onSurface),
             decoration: _buildInputDecoration(
-              "e.g. John Doe",
+              "e.g. Prem Kumar",
               Icons.person_outline,
             ),
             validator: (val) =>
@@ -314,11 +284,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
           // Phone Number
           Text(
             "Phone Number",
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
+            style: AppTypography.labelSm(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           TextFormField(
@@ -326,7 +292,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
             keyboardType: TextInputType.phone,
             inputFormatters: [PhoneInputFormatter()],
             onChanged: (_) => setState(() {}),
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+            style: AppTypography.bodyMd(color: AppColors.onSurface),
             decoration: _buildInputDecoration(
               "e.g. 98765 43210",
               Icons.phone_outlined,
@@ -349,10 +315,10 @@ class _SignupViewState extends ConsumerState<SignupView> {
             child: ElevatedButton(
               onPressed: isSendOtpEnabled && !_sendOtpLoading ? _sendOtp : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: Colors.grey[200],
-                disabledForegroundColor: Colors.grey[400],
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.deepObsidian,
+                disabledBackgroundColor: AppColors.surfaceContainerLow,
+                disabledForegroundColor: AppColors.subtleGrey,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -363,15 +329,15 @@ class _SignupViewState extends ConsumerState<SignupView> {
                       height: 24,
                       width: 24,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: AppColors.deepObsidian,
                         strokeWidth: 2.5,
                       ),
                     )
                   : Text(
-                      "Send OTP",
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                      _otpSent ? "Resend OTP" : "Send OTP",
+                      style: AppTypography.labelSm(color: AppColors.deepObsidian).copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
                       ),
                     ),
             ),
@@ -383,11 +349,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
           if (_otpSent) ...[
             Text(
               "Enter Verification Code",
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-              ),
+              style: AppTypography.labelSm(color: AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 12),
             Row(
@@ -402,27 +364,24 @@ class _SignupViewState extends ConsumerState<SignupView> {
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
                     maxLength: 1,
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTypography.headlineLg(color: AppColors.onSurface).copyWith(fontSize: 18),
                     decoration: InputDecoration(
                       counterText: "",
                       contentPadding: EdgeInsets.zero,
                       filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
+                      fillColor: AppColors.surfaceContainerLow,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                        borderSide: const BorderSide(color: AppColors.outlineVariant),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                        borderSide: const BorderSide(color: AppColors.outlineVariant),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(
-                          color: Color(0xFF6366F1),
+                          color: AppColors.primary,
                           width: 1.5,
                         ),
                       ),
@@ -434,6 +393,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
                           _otpFocusNodes[index + 1].requestFocus();
                         } else {
                           _otpFocusNodes[index].unfocus();
+                          _verifyOtp();
                         }
                       } else {
                         if (index > 0) {
@@ -452,10 +412,10 @@ class _SignupViewState extends ConsumerState<SignupView> {
               child: ElevatedButton(
                 onPressed: _isVerifyEnabled() ? _verifyOtp : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey[200],
-                  disabledForegroundColor: Colors.grey[400],
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.deepObsidian,
+                  disabledBackgroundColor: AppColors.surfaceContainerLow,
+                  disabledForegroundColor: AppColors.subtleGrey,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -463,9 +423,9 @@ class _SignupViewState extends ConsumerState<SignupView> {
                 ),
                 child: Text(
                   "Verify OTP",
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                  style: AppTypography.labelSm(color: AppColors.deepObsidian).copyWith(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
                   ),
                 ),
               ),
@@ -481,17 +441,11 @@ class _SignupViewState extends ConsumerState<SignupView> {
               child: RichText(
                 text: TextSpan(
                   text: "Already have an account? ",
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: AppTypography.bodyMd(color: AppColors.onSurfaceVariant),
                   children: [
                     TextSpan(
                       text: "Login",
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: const Color(0xFF6366F1),
+                      style: AppTypography.bodyMd(color: AppColors.primary).copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -514,21 +468,12 @@ class _SignupViewState extends ConsumerState<SignupView> {
         children: [
           Text(
             "Complete Profile",
-            style: GoogleFonts.inter(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: Colors.black,
-              letterSpacing: -1,
-            ),
+            style: AppTypography.headlineLg(color: AppColors.onSurface),
           ),
           const SizedBox(height: 8),
           Text(
-            "Step 2 of 2: Create secure credentials to access ArrowAI.",
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: Colors.grey[600],
-              height: 1.4,
-            ),
+            "Step 2 of 2: Set up your secure account password & profile data.",
+            style: AppTypography.bodyMd(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 35),
 
@@ -537,26 +482,22 @@ class _SignupViewState extends ConsumerState<SignupView> {
               margin: const EdgeInsets.only(bottom: 20),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
-                border: Border.all(color: const Color(0xFFFEE2E2)),
+                color: AppColors.errorContainer.withOpacity(0.2),
+                border: Border.all(color: AppColors.errorContainer),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                  const Icon(Icons.error_outline, color: AppColors.error, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       authState.errorMessage!,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.red[800],
-                      ),
+                      style: AppTypography.bodyMd(color: AppColors.error),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 16, color: Colors.red),
+                    icon: const Icon(Icons.close, size: 16, color: AppColors.error),
                     onPressed: () =>
                         ref.read(authProvider.notifier).clearError(),
                   ),
@@ -567,17 +508,13 @@ class _SignupViewState extends ConsumerState<SignupView> {
           // Email
           Text(
             "Email Address",
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
+            style: AppTypography.labelSm(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+            style: AppTypography.bodyMd(color: AppColors.onSurface),
             decoration: _buildInputDecoration(
               "e.g. name@domain.com",
               Icons.email_outlined,
@@ -596,16 +533,12 @@ class _SignupViewState extends ConsumerState<SignupView> {
           // Location
           Text(
             "Location",
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
+            style: AppTypography.labelSm(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _locationController,
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+            style: AppTypography.bodyMd(color: AppColors.onSurface),
             decoration: _buildInputDecoration(
               "e.g. Mumbai, India",
               Icons.location_on_outlined,
@@ -620,35 +553,31 @@ class _SignupViewState extends ConsumerState<SignupView> {
           // Occupation
           Text(
             "Occupation",
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
+            style: AppTypography.labelSm(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
+              color: AppColors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: AppColors.outlineVariant),
             ),
             child: DropdownButtonFormField<String>(
               value: _selectedOccupation,
+              dropdownColor: AppColors.surfaceContainerLow,
               hint: Text(
                 "Select your occupation",
-                style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 14),
+                style: AppTypography.bodyMd(color: AppColors.subtleGrey),
               ),
-              icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey[500]),
-              dropdownColor: Colors.white,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.onSurfaceVariant),
               borderRadius: BorderRadius.circular(12),
               isExpanded: true,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.work_outline, size: 20, color: Colors.black45),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.work_outline, size: 20, color: AppColors.onSurfaceVariant),
+                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 border: InputBorder.none,
               ),
-              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+              style: AppTypography.bodyMd(color: AppColors.onSurface),
               items: const [
                 DropdownMenuItem(value: 'student', child: Text('Student')),
                 DropdownMenuItem(value: 'businessman', child: Text('Businessman')),
@@ -664,7 +593,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _occupationDetailController,
-              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+              style: AppTypography.bodyMd(color: AppColors.onSurface),
               decoration: _buildInputDecoration(
                 "Specify your occupation",
                 Icons.edit_outlined,
@@ -683,35 +612,31 @@ class _SignupViewState extends ConsumerState<SignupView> {
           // Gender
           Text(
             "Gender",
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
+            style: AppTypography.labelSm(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
+              color: AppColors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: AppColors.outlineVariant),
             ),
             child: DropdownButtonFormField<String>(
               value: _selectedGender,
+              dropdownColor: AppColors.surfaceContainerLow,
               hint: Text(
                 "Select your gender",
-                style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 14),
+                style: AppTypography.bodyMd(color: AppColors.subtleGrey),
               ),
-              icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey[500]),
-              dropdownColor: Colors.white,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.onSurfaceVariant),
               borderRadius: BorderRadius.circular(12),
               isExpanded: true,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.person_outline, size: 20, color: Colors.black45),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.person_outline, size: 20, color: AppColors.onSurfaceVariant),
+                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 border: InputBorder.none,
               ),
-              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+              style: AppTypography.bodyMd(color: AppColors.onSurface),
               items: const [
                 DropdownMenuItem(value: 'male', child: Text('Male')),
                 DropdownMenuItem(value: 'female', child: Text('Female')),
@@ -727,26 +652,22 @@ class _SignupViewState extends ConsumerState<SignupView> {
           // Password
           Text(
             "Password",
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
+            style: AppTypography.labelSm(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+            style: AppTypography.bodyMd(color: AppColors.onSurface),
             decoration: InputDecoration(
               hintText: "Min 6 characters password",
-              hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
+              hintStyle: AppTypography.bodyMd(color: AppColors.subtleGrey),
               filled: true,
-              fillColor: const Color(0xFFF8F9FA),
+              fillColor: AppColors.surfaceContainerLow,
               prefixIcon: const Icon(
                 Icons.lock_outline,
                 size: 20,
-                color: Colors.black45,
+                color: AppColors.onSurfaceVariant,
               ),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -754,7 +675,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                   size: 20,
-                  color: Colors.black45,
+                  color: AppColors.onSurfaceVariant,
                 ),
                 onPressed: () =>
                     setState(() => _obscurePassword = !_obscurePassword),
@@ -765,16 +686,16 @@ class _SignupViewState extends ConsumerState<SignupView> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderSide: const BorderSide(color: AppColors.outlineVariant),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                borderSide: const BorderSide(color: AppColors.outlineVariant),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: Color(0xFF6366F1),
+                  color: AppColors.primary,
                   width: 1.5,
                 ),
               ),
@@ -796,8 +717,10 @@ class _SignupViewState extends ConsumerState<SignupView> {
             child: ElevatedButton(
               onPressed: authState.isLoading ? null : _submitProfile,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.deepObsidian,
+                disabledBackgroundColor: AppColors.surfaceContainerLow,
+                disabledForegroundColor: AppColors.subtleGrey,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -808,15 +731,15 @@ class _SignupViewState extends ConsumerState<SignupView> {
                       height: 24,
                       width: 24,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: AppColors.deepObsidian,
                         strokeWidth: 2.5,
                       ),
                     )
                   : Text(
                       "Complete Profile",
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                      style: AppTypography.labelSm(color: AppColors.deepObsidian).copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
                       ),
                     ),
             ),
@@ -830,22 +753,22 @@ class _SignupViewState extends ConsumerState<SignupView> {
   InputDecoration _buildInputDecoration(String hint, IconData prefixIcon) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
+      hintStyle: AppTypography.bodyMd(color: AppColors.subtleGrey),
       filled: true,
-      fillColor: const Color(0xFFF8F9FA),
-      prefixIcon: Icon(prefixIcon, size: 20, color: Colors.black45),
+      fillColor: AppColors.surfaceContainerLow,
+      prefixIcon: Icon(prefixIcon, size: 20, color: AppColors.onSurfaceVariant),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        borderSide: const BorderSide(color: AppColors.outlineVariant),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        borderSide: const BorderSide(color: AppColors.outlineVariant),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
     );
   }
