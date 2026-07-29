@@ -1,6 +1,7 @@
 import 'package:client/utils/design_system/design_system.dart';
 import 'package:client/viewmodels/auth_viewmodel.dart';
 import 'package:client/viewmodels/settings_viewmodel.dart';
+import 'package:client/viewmodels/navigation_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -52,22 +53,7 @@ class SettingsView extends ConsumerWidget {
             _buildSectionHeader('APPEARANCE'),
             const SizedBox(height: 12),
             _buildCard(
-              child: Column(
-                children: [
-                  _buildThemeTile(context, ref, settings),
-                  _buildDivider(),
-                  _buildLanguageTile(context, ref, settings),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // ── Notifications Section ─────────────────────────────────
-            _buildSectionHeader('NOTIFICATIONS'),
-            const SizedBox(height: 12),
-            _buildCard(
-              child: _buildNotificationTile(ref),
+              child: _buildThemeTile(context, ref, settings),
             ),
 
             const SizedBox(height: 28),
@@ -80,7 +66,7 @@ class SettingsView extends ConsumerWidget {
                 children: [
                   _buildProfileTile(user),
                   _buildDivider(),
-                  _buildPremiumTile(user),
+                  _buildPremiumTile(context, ref, user),
                 ],
               ),
             ),
@@ -172,13 +158,33 @@ class SettingsView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Theme',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Theme',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.goldBright.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'COMING SOON',
+                        style: GoogleFonts.inter(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.goldBright,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -191,29 +197,26 @@ class SettingsView extends ConsumerWidget {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () => _showThemeBottomSheet(context, ref, settings),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _themeModeShortLabel(settings.themeMode),
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
-                    ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerHigh.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _themeModeShortLabel(settings.themeMode),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.subtleGrey,
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.unfold_more, color: AppColors.subtleGrey, size: 14),
-                ],
-              ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.unfold_more, color: AppColors.subtleGrey, size: 14),
+              ],
             ),
           ),
         ],
@@ -598,7 +601,7 @@ class SettingsView extends ConsumerWidget {
 
   // ── Premium Tile ──────────────────────────────────────────────────────────
 
-  Widget _buildPremiumTile(dynamic user) {
+  Widget _buildPremiumTile(BuildContext context, WidgetRef ref, dynamic user) {
     final isPremium = user?.isPremium ?? false;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -647,19 +650,25 @@ class SettingsView extends ConsumerWidget {
             ),
           ),
           if (!isPremium)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.goldBright,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'UPGRADE',
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.deepObsidian,
-                  letterSpacing: 0.8,
+            GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                ref.read(navigationProvider.notifier).state = 4;
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppColors.goldBright,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'UPGRADE',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.deepObsidian,
+                    letterSpacing: 0.8,
+                  ),
                 ),
               ),
             ),
