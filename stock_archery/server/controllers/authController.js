@@ -5,33 +5,53 @@ const { admin } = require('../config/firebase');
 
 exports.sendOtp = async (req, res) => {
   const { phoneNumber } = req.body;
+  console.log(`[log] ─────────────────────────────────────────`);
+  console.log(`[log] sendOtp → Incoming request`);
+  console.log(`[log] sendOtp → phoneNumber: ${phoneNumber}`);
+  console.log(`[log] sendOtp → TWOFACTOR_API_KEY exists: ${!!process.env.TWOFACTOR_API_KEY}`);
+  console.log(`[log] sendOtp → API URL: https://2factor.in/API/V1/${process.env.TWOFACTOR_API_KEY ? process.env.TWOFACTOR_API_KEY.substring(0, 8) + '...' : 'MISSING'}/SMS/${phoneNumber}/AUTOGEN2/`);
+
   if (!phoneNumber) {
+    console.log(`[log] sendOtp ✗ Phone number missing`);
     return res.status(400).json({ message: 'Phone number is required' });
   }
 
   try {
     const apiKey = process.env.TWOFACTOR_API_KEY;
     const url = `https://2factor.in/API/V1/${apiKey}/SMS/${phoneNumber}/AUTOGEN2/`;
-    console.log(`📡 Requesting 2Factor OTP for ${phoneNumber}...`);
+    console.log(`[log] sendOtp → Calling 2Factor API...`);
+    const startTime = Date.now();
     const response = await axios.get(url);
+    const elapsed = Date.now() - startTime;
+
+    console.log(`[log] sendOtp ← 2Factor responded in ${elapsed}ms`);
+    console.log(`[log] sendOtp ← Status: ${response.data?.Status}`);
+    console.log(`[log] sendOtp ← Full response: ${JSON.stringify(response.data)}`);
 
     if (response.data && response.data.Status === "Success") {
       const otp = response.data.OTP;
-      console.log(`🔑 Received 6-digit OTP from 2Factor for ${phoneNumber}: ${otp}`);
+      console.log(`[log] sendOtp ✓ OTP sent successfully: ${otp}`);
       res.json({
         success: true,
         message: 'OTP sent successfully via 2Factor',
         otp: otp
       });
     } else {
-      console.error("❌ 2Factor API Error:", response.data);
+      console.log(`[log] sendOtp ✗ 2Factor API error: ${JSON.stringify(response.data)}`);
       res.status(500).json({
         success: false,
         message: response.data ? response.data.Details : 'Failed to send OTP via 2factor'
       });
     }
   } catch (err) {
-    console.error("❌ Failed to request OTP from 2Factor:", err.message);
+    console.log(`[log] sendOtp ✗ Exception after ${Date.now()}ms`);
+    console.log(`[log] sendOtp ✗ Error message: ${err.message}`);
+    if (err.response) {
+      console.log(`[log] sendOtp ✗ HTTP status: ${err.response.status}`);
+      console.log(`[log] sendOtp ✗ Response data: ${JSON.stringify(err.response.data)}`);
+    } else if (err.code) {
+      console.log(`[log] sendOtp ✗ Error code: ${err.code}`);
+    }
     res.status(500).json({
       success: false,
       message: 'OTP service connection failed',
@@ -41,10 +61,14 @@ exports.sendOtp = async (req, res) => {
 };
 
 exports.syncUser = async (req, res) => {
-  const { name, phoneNumber, location } = req.body;
+  const { name, phoneNumber, location, occupation, occupationDetail, gender } = req.body;
   const { uid, email } = req.user;
 
+  console.log(`[log] syncUser → uid: ${uid}, email: ${email}`);
+  console.log(`[log] syncUser → body: ${JSON.stringify({ name, phoneNumber, location, occupation, occupationDetail, gender })}`);
+
   if (!email) {
+    console.log(`[log] syncUser ✗ Email missing from token`);
     return res.status(400).json({ message: 'Email is required from auth credentials' });
   }
 
@@ -58,12 +82,21 @@ exports.syncUser = async (req, res) => {
         return res.status(400).json({ message: 'Name, phone number, and location are required for new registration' });
       }
 
+      // Check if phone number is already registered to another user
+      const existingPhoneUser = await User.findOne({ phoneNumber: phoneNumber.trim() });
+      if (existingPhoneUser) {
+        return res.status(409).json({ message: 'This phone number is already registered with another account' });
+      }
+
       user = new User({
         firebaseUid: uid,
         name,
         email,
         phoneNumber,
         location,
+        occupation: occupation || null,
+        occupationDetail: occupationDetail || null,
+        gender: gender || null,
         isPremium: false,
         isSOB_alert_premium: false,
         SOB_alert_expiresAt: null,
@@ -78,7 +111,17 @@ exports.syncUser = async (req, res) => {
       // If the user already exists, update their profile fields optionally if provided
       const updateData = {};
       if (name) updateData.name = name;
-      if (phoneNumber) updateData.phoneNumber = phoneNumber;
+      if (phoneNumber) {
+        // Check if the new phone number is already taken by another user
+        const existingPhoneUser = await User.findOne({
+          phoneNumber: phoneNumber.trim(),
+          firebaseUid: { $ne: uid }
+        });
+        if (existingPhoneUser) {
+          return res.status(409).json({ message: 'This phone number is already registered with another account' });
+        }
+        updateData.phoneNumber = phoneNumber;
+      }
       if (location) updateData.location = location;
 
       if (Object.keys(updateData).length > 0) {
@@ -145,6 +188,9 @@ exports.syncUser = async (req, res) => {
         email: user.email,
         phoneNumber: user.phoneNumber,
         location: user.location,
+        occupation: user.occupation,
+        occupationDetail: user.occupationDetail,
+        gender: user.gender,
         isPremium: user.isPremium,
         premiumExpiresAt: user.premiumExpiresAt,
         isSOB_alert_premium: user.isSOB_alert_premium,

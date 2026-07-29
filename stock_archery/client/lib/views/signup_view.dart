@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../utils/toast_util.dart';
+import '../services/app_config.dart';
 
 class PhoneInputFormatter extends TextInputFormatter {
   @override
@@ -47,8 +48,11 @@ class _SignupViewState extends ConsumerState<SignupView> {
   final _emailController = TextEditingController();
   final _locationController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _occupationDetailController = TextEditingController();
 
   bool _obscurePassword = true;
+  String? _selectedOccupation;
+  String? _selectedGender;
 
   // Step and OTP flow variables
   int _currentStep =
@@ -71,6 +75,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
     _phoneController.dispose();
     _locationController.dispose();
     _passwordController.dispose();
+    _occupationDetailController.dispose();
     for (var controller in _otpControllers) {
       controller.dispose();
     }
@@ -82,7 +87,13 @@ class _SignupViewState extends ConsumerState<SignupView> {
 
   void _sendOtp() async {
     final cleanPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    if (cleanPhone.length != 10) return;
+    debugPrint('[log] [SignupView] _sendOtp triggered, phone: $cleanPhone');
+    debugPrint('[log] [SignupView] baseUrl: ${AppConfig.baseUrl}');
+    debugPrint('[log] [SignupView] environment: ${AppConfig.environment}');
+    if (cleanPhone.length != 10) {
+      debugPrint('[log] [SignupView] Invalid phone length: ${cleanPhone.length}');
+      return;
+    }
 
     setState(() {
       _sendOtpLoading = true;
@@ -91,7 +102,9 @@ class _SignupViewState extends ConsumerState<SignupView> {
     });
 
     try {
+      debugPrint('[log] [SignupView] Calling authViewModel.sendOtp...');
       final otp = await ref.read(authProvider.notifier).sendOtp(cleanPhone);
+      debugPrint('[log] [SignupView] sendOtp returned: ${otp != null ? "OTP received" : "null"}');
       if (otp != null) {
         setState(() {
           _expectedOtp = otp;
@@ -110,6 +123,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
         });
       }
     } catch (e) {
+      debugPrint('[log] [SignupView] _sendOtp exception: $e');
       setState(() {
         _sendOtpLoading = false;
         _otpError = e.toString().replaceAll("Exception: ", "");
@@ -150,6 +164,11 @@ class _SignupViewState extends ConsumerState<SignupView> {
           phoneNumber: cleanPhone,
           location: _locationController.text.trim(),
           password: _passwordController.text.trim(),
+          occupation: _selectedOccupation,
+          occupationDetail: _selectedOccupation == 'others'
+              ? _occupationDetailController.text.trim()
+              : null,
+          gender: _selectedGender,
         );
 
     if (success && mounted) {
@@ -585,6 +604,113 @@ class _SignupViewState extends ConsumerState<SignupView> {
             validator: (val) => val == null || val.trim().isEmpty
                 ? 'Location is required'
                 : null,
+          ),
+
+          const SizedBox(height: 20),
+
+          // Occupation
+          Text(
+            "Occupation",
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: DropdownButtonFormField<String>(
+              value: _selectedOccupation,
+              hint: Text(
+                "Select your occupation",
+                style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 14),
+              ),
+              icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey[500]),
+              dropdownColor: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              isExpanded: true,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.work_outline, size: 20, color: Colors.black45),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                border: InputBorder.none,
+              ),
+              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+              items: const [
+                DropdownMenuItem(value: 'student', child: Text('Student')),
+                DropdownMenuItem(value: 'businessman', child: Text('Businessman')),
+                DropdownMenuItem(value: 'others', child: Text('Others')),
+              ],
+              onChanged: (val) => setState(() => _selectedOccupation = val),
+              validator: (val) => val == null ? 'Occupation is required' : null,
+            ),
+          ),
+
+          // Occupation detail (shown only when "others" is selected)
+          if (_selectedOccupation == 'others') ...[
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _occupationDetailController,
+              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+              decoration: _buildInputDecoration(
+                "Specify your occupation",
+                Icons.edit_outlined,
+              ),
+              validator: (val) {
+                if (_selectedOccupation == 'others' && (val == null || val.trim().isEmpty)) {
+                  return 'Please specify your occupation';
+                }
+                return null;
+              },
+            ),
+          ],
+
+          const SizedBox(height: 20),
+
+          // Gender
+          Text(
+            "Gender",
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: DropdownButtonFormField<String>(
+              value: _selectedGender,
+              hint: Text(
+                "Select your gender",
+                style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 14),
+              ),
+              icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey[500]),
+              dropdownColor: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              isExpanded: true,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.person_outline, size: 20, color: Colors.black45),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                border: InputBorder.none,
+              ),
+              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+              items: const [
+                DropdownMenuItem(value: 'male', child: Text('Male')),
+                DropdownMenuItem(value: 'female', child: Text('Female')),
+                DropdownMenuItem(value: 'others', child: Text('Others')),
+              ],
+              onChanged: (val) => setState(() => _selectedGender = val),
+              validator: (val) => val == null ? 'Gender is required' : null,
+            ),
           ),
 
           const SizedBox(height: 20),

@@ -6,6 +6,9 @@ class UserModel {
   final String location;
   final bool isPremium;
   final DateTime? premiumExpiresAt;
+  final String? occupation;
+  final String? occupationDetail;
+  final String? gender;
 
   // Alert access fields
   final bool isSOBAlertPremium;
@@ -23,6 +26,9 @@ class UserModel {
     required this.location,
     required this.isPremium,
     this.premiumExpiresAt,
+    this.occupation,
+    this.occupationDetail,
+    this.gender,
     this.isSOBAlertPremium = false,
     this.sobAlertExpiresAt,
     this.isXaudAlertPremium = false,
@@ -43,6 +49,9 @@ class UserModel {
       premiumExpiresAt: json['premiumExpiresAt'] != null
           ? DateTime.tryParse(json['premiumExpiresAt'])
           : null,
+      occupation: json['occupation'],
+      occupationDetail: json['occupationDetail'],
+      gender: json['gender'],
       isSOBAlertPremium: alerts['isSOB_alert_premium'] ?? false,
       sobAlertExpiresAt: alerts['SOB_alert_expiresAt'] != null
           ? DateTime.tryParse(alerts['SOB_alert_expiresAt'])
@@ -67,6 +76,9 @@ class UserModel {
       'location': location,
       'isPremium': isPremium,
       'premiumExpiresAt': premiumExpiresAt?.toIso8601String(),
+      'occupation': occupation,
+      'occupationDetail': occupationDetail,
+      'gender': gender,
       'isSOB_alert_premium': isSOBAlertPremium,
       'SOB_alert_expiresAt': sobAlertExpiresAt?.toIso8601String(),
       'isXaud_alert_premium': isXaudAlertPremium,
@@ -84,6 +96,9 @@ class UserModel {
     String? location,
     bool? isPremium,
     DateTime? premiumExpiresAt,
+    String? occupation,
+    String? occupationDetail,
+    String? gender,
     bool? isSOBAlertPremium,
     DateTime? sobAlertExpiresAt,
     bool? isXaudAlertPremium,
@@ -99,6 +114,9 @@ class UserModel {
       location: location ?? this.location,
       isPremium: isPremium ?? this.isPremium,
       premiumExpiresAt: premiumExpiresAt ?? this.premiumExpiresAt,
+      occupation: occupation ?? this.occupation,
+      occupationDetail: occupationDetail ?? this.occupationDetail,
+      gender: gender ?? this.gender,
       isSOBAlertPremium: isSOBAlertPremium ?? this.isSOBAlertPremium,
       sobAlertExpiresAt: sobAlertExpiresAt ?? this.sobAlertExpiresAt,
       isXaudAlertPremium: isXaudAlertPremium ?? this.isXaudAlertPremium,

@@ -22,12 +22,28 @@ const userSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
     required: true,
+    unique: true,
     trim: true
   },
   location: {
     type: String,
     required: true,
     trim: true
+  },
+  occupation: {
+    type: String,
+    enum: ['student', 'businessman', 'others'],
+    default: null
+  },
+  occupationDetail: {
+    type: String,
+    trim: true,
+    default: null
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'others'],
+    default: null
   },
   isPremium: {
     type: Boolean,

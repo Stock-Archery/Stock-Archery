@@ -22,6 +22,19 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`[log] ──→ ${req.method} ${req.originalUrl}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    // Mask sensitive fields
+    const masked = { ...req.body };
+    if (masked.password) masked.password = '***';
+    if (masked.phoneNumber) masked.phoneNumber = masked.phoneNumber;
+    console.log(`[log] body: ${JSON.stringify(masked)}`);
+  }
+  next();
+});
+
 // Initialization
 initFirebase();
 connectDB();
@@ -41,6 +54,10 @@ app.use('/api', chatRoutes); // /api/chat and /api/chart-analysis
 app.use('/api', notificationRoutes); // /api/test/push and /api/admin/push/broadcast
 app.use('/api/alerts', alertRoutes);
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`[log] Server bound to 0.0.0.0:${PORT}`);
+  console.log(`[log] MONGO_URI exists: ${!!process.env.MONGO_URI}`);
+  console.log(`[log] OPENAI_API_KEY exists: ${!!process.env.OPENAI_API_KEY}`);
+  console.log(`[log] TWOFACTOR_API_KEY exists: ${!!process.env.TWOFACTOR_API_KEY}`);
 });

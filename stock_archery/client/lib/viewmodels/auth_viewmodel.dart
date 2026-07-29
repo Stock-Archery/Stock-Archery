@@ -143,12 +143,15 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
   /// Request SMS OTP for a phone number
   Future<String?> sendOtp(String phoneNumber) async {
+    debugPrint('[log] [AuthViewModel] sendOtp called for: $phoneNumber');
     try {
       state = state.copyWith(isLoading: true, clearError: true);
       final otp = await _authService.sendOtp(phoneNumber);
+      debugPrint('[log] [AuthViewModel] sendOtp success');
       state = state.copyWith(isLoading: false);
       return otp;
     } catch (e) {
+      debugPrint('[log] [AuthViewModel] sendOtp failed: $e');
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll("Exception: ", ""),
@@ -164,6 +167,9 @@ class AuthViewModel extends StateNotifier<AuthState> {
     required String phoneNumber,
     required String location,
     required String password,
+    String? occupation,
+    String? occupationDetail,
+    String? gender,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -174,6 +180,9 @@ class AuthViewModel extends StateNotifier<AuthState> {
         phoneNumber: phoneNumber,
         location: location,
         password: password,
+        occupation: occupation,
+        occupationDetail: occupationDetail,
+        gender: gender,
       );
 
       // Save a new session ID for this newly registered user

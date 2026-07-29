@@ -35,6 +35,7 @@
 - **AI Chart Analysis:** GPT-4o vision for image-based technical chart analysis
 - **Video Education:** Curated YouTube strategy videos
 - **Premium Subscriptions:** RevenueCat-managed annual plan with gated content
+- **Alert System:** Category-based (SOB, XAUD, Crypto) chart alerts with premium access gating
 - **Single-Device Login:** Enforced via Firebase Realtime Database
 - **Push Notifications:** FCM-based targeted and broadcast messaging
 - **Broker Partnerships:** Affiliate links to Fyers, CoinDCX, Angel One, Dhan, Upstox
@@ -83,8 +84,14 @@ Stock-Archery/
 │   │   ├── .env                       # SERVER_URL + mongoUri (gitignored)
 │   │   └── .env.sample                # Template for .env
 │   │
-│   ├── server/                        # F&O stock data microservice
-│   │   ├── index.js                   # Express server (fetches from Upstox)
+│   ├── server/                        # F&O stock data + Alert CRUD microservice
+│   │   ├── index.js                   # Express server (fetches from Upstox, mounts routes)
+│   │   ├── models/
+│   │   │   └── AlertPost.js           # Mongoose schema for alert_posts collection
+│   │   ├── controllers/
+│   │   │   └── alertController.js     # createAlert, getAlertsByCategory, deleteAlert
+│   │   ├── routes/
+│   │   │   └── alertRoutes.js         # POST /, GET /:category, DELETE /:id
 │   │   ├── .env                       # mongoUri (gitignored)
 │   │   └── package.json               # Node dependencies (ESM)
 │   │
@@ -136,11 +143,14 @@ Stock-Archery/
 ### Admin Client
 | Category | Technology | Version |
 |----------|-----------|---------|
-| Framework | Flutter | (latest) |
+| Framework | Flutter | SDK ^3.11.5 |
 | State Management | provider | ^6.1.5+1 |
 | Database (direct) | mongo_dart | ^0.10.8 |
 | HTTP | http | ^1.6.0 |
 | Typography | google_fonts | ^8.0.2 |
+| Environment | flutter_dotenv | ^6.0.1 |
+| Image Picker | image_picker | ^1.1.2 |
+| Date Formatting | intl | ^0.19.0 |
 
 ### Admin Server
 | Category | Technology | Version |
@@ -239,11 +249,13 @@ stock_archery/client/lib/
 │           └── paywall.dart                      # PaywallScreen (alternate paywall UI)
 │
 ├── models/
+│   ├── alert_post.dart                           # AlertPost: id, category, text, imageBase64, createdAt
 │   ├── broker_model.dart                         # BrokerModel: name, description, affiliateUrl, imageUrl
-│   ├── user_model.dart                           # UserModel: firebaseUid, name, email, phone, location, isPremium
+│   ├── user_model.dart                           # UserModel: firebaseUid, name, email, phone, location, isPremium, alert premiums
 │   └── video_model.dart                          # VideoModel: title, videoId, thumbnail, description
 │
 ├── services/
+│   ├── alerts_service.dart                       # AlertsService: GET /alerts/:category
 │   ├── app_config.dart                           # AppConfig: DEV_BASE_URL / PROD_BASE_URL from .env
 │   ├── auth_service.dart                         # AuthService: Firebase Auth + mock fallback + backend sync
 │   ├── session_service.dart                      # SessionService: single-device enforcement via Firebase RTDB
@@ -258,7 +270,8 @@ stock_archery/client/lib/
 │       └── app_typography.dart                   # AppTypography
 │
 ├── viewmodels/
-│   ├── auth_viewmodel.dart                       # AuthViewModel: login, signup, logout, forceLogout, FCM
+│   ├── alerts_provider.dart                      # alertsServiceProvider, selectedCategoryProvider, alertsProvider (FutureProvider.family)
+│   ├── auth_viewmodel.dart                       # AuthViewModel: login, signup, logout, forceLogout, FCM, RTDB alert listener
 │   ├── chat_viewmodel.dart                       # ChatViewModel: text + chart AI chat
 │   ├── navigation_viewmodel.dart                 # navigationProvider: bottom nav tab index
 │   ├── session_provider.dart                     # sessionProvider: RTDB session listener orchestrator
@@ -267,14 +280,15 @@ stock_archery/client/lib/
 │   └── video_viewmodel.dart                      # videoProvider: hardcoded 3 VideoModel entries
 │
 ├── views/
-│   ├── auth_wrapper.dart                         # Root router: LoginView or MainNavigationScreen
-│   ├── login_view.dart                           # Email/password login form
-│   ├── signup_view.dart                          # 2-step signup (OTP phone, then profile)
-│   ├── main_navigation_screen.dart               # Scaffold + BottomNav + Drawer
-│   ├── stocks_view.dart                          # Top recommendations list + premium card
 │   ├── ai_bot_view.dart                          # Dual-tab chat (Trading + Chart Insights)
+│   ├── alerts_view.dart                          # Alert feed with category tabs (SOB/XAUD/Crypto), locked/unlocked states, video popups
+│   ├── auth_wrapper.dart                         # Root router: LoginView or MainNavigationScreen
 │   ├── brokers_view.dart                         # Broker partner cards
+│   ├── login_view.dart                           # Email/password login form
+│   ├── main_navigation_screen.dart               # Scaffold + BottomNav (6 tabs) + Drawer
 │   ├── settings_view.dart                        # Theme, language, notifications, account, logout
+│   ├── signup_view.dart                          # 2-step signup (OTP phone, then profile)
+│   ├── stocks_view.dart                          # Top recommendations list + premium card
 │   ├── subscription_view.dart                    # Premium plan card + purchase flow
 │   ├── video_list_view.dart                      # Strategy video list + premium locked card
 │   └── video_player_screen.dart                  # YouTube player + metadata
@@ -283,9 +297,9 @@ stock_archery/client/lib/
     └── build_Feature.dart                        # FeatureCard + PaymentDetailRow widgets
 ```
 
-**Total:** 34 Dart files across 12 directories.
+**Total:** 40 Dart files across 13 directories.
 
-### App Screens (5 Tabs + Auxiliaries)
+### App Screens (6 Tabs + Auxiliaries)
 
 | Tab | Screen | Purpose |
 |-----|--------|---------|
@@ -293,7 +307,8 @@ stock_archery/client/lib/
 | 2 | `StocksView` | Top stock recommendations from API |
 | 3 | `AiBotView` | AI chat (Trading Insights + Chart Insights tabs) |
 | 4 | `BrokersView` | Broker partner cards + "How to Claim Benefits" |
-| 5 | `SubscriptionView` | RevenueCat premium plan purchase |
+| 5 | `AlertsView` | Category-based alert feed (SOB / XAUD / Crypto) with premium gating |
+| 6 | `SubscriptionView` | RevenueCat premium plan purchase |
 
 **Auxiliary Screens:** `AuthWrapper`, `LoginView`, `SignupView`, `MainNavigationScreen` (with Drawer), `SettingsView`, `VideoPlayerScreen`
 
@@ -333,23 +348,26 @@ stock_archery/server/
 │   └── auth.js                                  # requireAuth: Bearer token → Firebase verify or mock fallback
 │
 ├── models/
-│   ├── User.js                                  # users collection schema
-│   ├── Recommendation.js                        # recommendations collection schema
-│   └── UserAlertAccess.js                       # user_alert_access collection schema
+│   ├── AlertPost.js                              # alert_posts collection schema (category, text, imageBase64)
+│   ├── Recommendation.js                         # recommendations collection schema
+│   ├── User.js                                   # users collection schema (includes alert premium fields)
+│   └── UserAlertAccess.js                        # user_alert_access collection schema (legacy, fields now on User)
 │
 ├── routes/
-│   ├── authRoutes.js                            # /api/auth/*
-│   ├── userRoutes.js                            # /api/user/*
-│   ├── chatRoutes.js                            # /api/chat, /api/chart-analysis
-│   ├── recommendationRoutes.js                  # /api/recommendations
-│   └── notificationRoutes.js                    # /api/test/push, /api/admin/push/broadcast
+│   ├── alertRoutes.js                            # GET /alerts/:category
+│   ├── authRoutes.js                             # /api/auth/*
+│   ├── chatRoutes.js                             # /api/chat, /api/chart-analysis
+│   ├── notificationRoutes.js                     # /api/test/push, /api/admin/push/broadcast
+│   ├── recommendationRoutes.js                   # /api/recommendations
+│   └── userRoutes.js                             # /api/user/*
 │
 └── controllers/
-    ├── authController.js                        # sendOtp (2Factor.in), syncUser (MongoDB upsert)
-    ├── userController.js                        # registerDevice, unregisterDevice, updateAlertAccess
-    ├── chatController.js                        # OpenAI GPT-4o chat + chart analysis
-    ├── recommendationController.js              # getRecommendations from MongoDB
-    └── notificationController.js                # FCM push (targeted + broadcast)
+    ├── alertController.js                        # getAlertsByCategory: fetch alerts by SOB/XAUD/Crypto
+    ├── authController.js                         # sendOtp (2Factor.in), syncUser (MongoDB upsert + alert expiration check)
+    ├── chatController.js                         # OpenAI GPT-4o chat + chart analysis
+    ├── notificationController.js                 # FCM push (targeted + broadcast)
+    ├── recommendationController.js               # getRecommendations from MongoDB
+    └── userController.js                         # registerDevice, unregisterDevice, updateAlertAccess
 ```
 
 ### Server Startup Flow
@@ -380,25 +398,32 @@ stock_archery/server/
 ### File Tree
 ```
 admin/client/admin/lib/
-├── main.dart                                    # Entry point, Provider setup, dark theme
+├── main.dart                                    # Entry point, Provider setup (StockViewModel + AlertViewModel), dark theme
 ├── models/
+│   ├── alert_post.dart                          # AlertPost: id, category, text, imageBase64, createdAt
 │   └── stock_recommendation.dart                # StockRecommendation: id, stocks, updatedAt
 ├── services/
-│   └── mongodb_service.dart                     # Direct MongoDB connection + HTTP to admin server
+│   ├── admin_api_service.dart                   # HTTP service for alert CRUD (getAlerts, createAlert, deleteAlert)
+│   └── mongodb_service.dart                     # Direct MongoDB connection + HTTP to admin server + user search
 ├── viewmodels/
+│   ├── alert_viewmodel.dart                     # AlertViewModel: category, image picker, send/delete alerts
 │   └── stock_viewmodel.dart                     # StockViewModel: selection logic, save, refresh
 └── views/
-    ├── home_page.dart                           # Dashboard landing page
-    └── stock_selection_page.dart                # Stock picker with search, 5-slot selection tray
+    ├── alert_send_page.dart                     # Alert creation: category picker, image upload, message, previous posts
+    ├── home_page.dart                           # Dashboard: 3 action tiles (stocks, alerts, user access)
+    ├── stock_selection_page.dart                # Stock picker with search, 5-slot selection tray
+    └── user_access_page.dart                    # User search by email/phone, toggle SOB/XAUD/Crypto premium access
 ```
 
-**Total:** 7 Dart files. Uses **Provider** (not Riverpod) for MVVM.
+**Total:** 11 Dart files. Uses **Provider** (not Riverpod) for MVVM.
 
 ### Core Functionality
 1. **Fetch F&O Stocks:** Direct MongoDB read from `fnostocks` collection
 2. **Select 5 Stocks:** UI with search filter, max 5 selection cap
 3. **Publish Recommendations:** Upserts to `recommendations` collection
 4. **Refresh from Upstox:** Triggers admin server `POST /refresh-fno`
+5. **Send Alerts:** Create chart alerts (image + text) for SOB, XAUD, or Crypto categories
+6. **Manage Alert Access:** Search users by email/phone, toggle premium alert subscriptions (1-year expiry)
 
 ### Business Rule
 Admin **must** select exactly 5 stocks. Fewer or more will not allow saving.
@@ -427,7 +452,13 @@ Main Client (end-user app)
 ### File Tree
 ```
 admin/server/
-├── index.js                                     # Express server (ESM), 122 lines
+├── index.js                                     # Express server (ESM), mounts /alerts routes, 126 lines
+├── models/
+│   └── AlertPost.js                             # Mongoose schema for alert_posts (category, text, imageBase64)
+├── controllers/
+│   └── alertController.js                       # createAlert, getAlertsByCategory, deleteAlert
+├── routes/
+│   └── alertRoutes.js                           # POST /, GET /:category, DELETE /:id
 ├── .env                                         # mongoUri
 ├── package.json                                 # type: "module"
 └── node_modules/
@@ -440,6 +471,9 @@ admin/server/
 | GET | `/` | Health check |
 | GET | `/fno-stocks` | Returns cached F&O stock list from memory/MongoDB |
 | POST | `/refresh-fno` | Fetches from Upstox, decompresses gzip, stores in MongoDB |
+| POST | `/alerts` | Create new alert (category, text, imageBase64) |
+| GET | `/alerts/:category` | Get alerts by category (SOB/XAUD/Crypto) |
+| DELETE | `/alerts/:id` | Delete alert by ID |
 
 ### Data Fetch Flow
 1. Fetch `https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz`
@@ -470,6 +504,12 @@ admin/server/
 | location | String | required, trimmed |
 | isPremium | Boolean | default: false |
 | premiumExpiresAt | Date | default: null |
+| isSOB_alert_premium | Boolean | default: false |
+| SOB_alert_expiresAt | Date | default: null |
+| isXaud_alert_premium | Boolean | default: false |
+| Xaud_alert_expiresAt | Date | default: null |
+| isCrypto_alert_premium | Boolean | default: false |
+| Crypto_alert_expiresAt | Date | default: null |
 | fcmTokens | Array of subdocuments | (see below) |
 | createdAt | Date | auto (timestamps) |
 | updatedAt | Date | auto (timestamps) |
@@ -490,7 +530,7 @@ admin/server/
 | stocks | Array of Strings |
 | updatedAt | String |
 
-### Collection: `user_alert_access`
+### Collection: `user_alert_access` (Legacy — fields now on `users`)
 | Field | Type | Default |
 |-------|------|---------|
 | firebaseUid | String | required, unique, indexed |
@@ -502,6 +542,17 @@ admin/server/
 | Crypto_alert_expiresAt | Date | null |
 | createdAt | Date | auto |
 | updatedAt | Date | auto |
+
+> **Note:** Alert premium fields have been moved directly onto the `users` collection. This collection is kept for backward compatibility but is no longer the source of truth.
+
+### Collection: `alert_posts`
+| Field | Type | Constraints |
+|-------|------|-------------|
+| category | String | required, enum: ['SOB', 'XAUD', 'Crypto'] |
+| text | String | required, trimmed |
+| imageBase64 | String | required |
+| createdAt | Date | auto (timestamps) |
+| updatedAt | Date | auto (timestamps) |
 
 ### Collection: `fnostocks` (Admin)
 | Field | Type |
@@ -528,6 +579,7 @@ admin/server/
 | POST | `/api/chart-analysis` | No | No | AI chart image analysis (GPT-4o vision) |
 | POST | `/api/test/push` | Yes | No | Test push to user's devices |
 | POST | `/api/admin/push/broadcast` | Yes* | No | Broadcast to `all_users` FCM topic |
+| GET | `/alerts/:category` | No | No | Get alerts by category (SOB/XAUD/Crypto) |
 
 ### Admin Server
 
@@ -556,11 +608,15 @@ If Firebase unavailable → mock mode (generates synthetic UID)
     ↓
 authProvider fires syncUser → POST /api/auth/sync
     ↓
-Server upserts User + UserAlertAccess in MongoDB
+Server upserts User in MongoDB + checks alert expiration dates
+    ↓
+Server syncs alert flags to Firebase RTDB at user_alerts/{uid}
     ↓
 sessionProvider starts RTDB listener on active_sessions/{uid}
     ↓
-MainNavigationScreen loads (5 tabs + drawer)
+AuthViewModel starts RTDB listener on user_alerts/{uid} for real-time alert access updates
+    ↓
+MainNavigationScreen loads (6 tabs + drawer)
 ```
 
 ### Phone OTP Flow (Signup)
@@ -591,7 +647,10 @@ When `Firebase.apps.isEmpty` (no Firebase config):
 | Provider | Type | File | State Class | Purpose |
 |----------|------|------|-------------|---------|
 | `authServiceProvider` | `Provider<AuthService>` | `auth_viewmodel.dart` | — | AuthService singleton |
-| `authProvider` | `StateNotifierProvider<AuthViewModel, AuthState>` | `auth_viewmodel.dart` | `AuthState` | User object, loading, errors, kick-out |
+| `authProvider` | `StateNotifierProvider<AuthViewModel, AuthState>` | `auth_viewmodel.dart` | `AuthState` | User object, loading, errors, kick-out, RTDB alert listener |
+| `alertsServiceProvider` | `Provider<AlertsService>` | `alerts_provider.dart` | — | AlertsService singleton |
+| `selectedCategoryProvider` | `StateProvider<String>` | `alerts_provider.dart` | `String` | Currently selected alert category (default: 'SOB') |
+| `alertsProvider` | `FutureProvider.family<List<AlertPost>, String>` | `alerts_provider.dart` | `List<AlertPost>` | Async alerts for a given category |
 | `sessionServiceProvider` | `Provider<SessionService>` | `session_provider.dart` | — | SessionService singleton |
 | `sessionProvider` | `Provider<void>` | `session_provider.dart` | — | Side-effect: starts/stops RTDB listener |
 | `navigationProvider` | `StateProvider<int>` | `navigation_viewmodel.dart` | `int` | Bottom nav tab index |
@@ -647,6 +706,25 @@ All screens extend `ConsumerWidget` or `ConsumerStatefulWidget` to watch/read pr
 4. `premiumProvider` calls RevenueCat `purchasePackage()`
 5. On success, `isPremium` state updates, gated content unlocks
 
+### Alert System
+1. **Admin creates alert:** Selects category (SOB/XAUD/Crypto), picks image (gallery/camera), writes message
+2. **Admin sends:** Image encoded to base64, POST to admin server `/alerts`
+3. **Admin server stores:** Saves AlertPost to `alert_posts` collection in MongoDB
+4. **Main client fetches:** `GET /alerts/:category` from main server
+5. **Access control:** Each category is gated by per-user premium flags (`isSOB_alert_premium`, etc.)
+6. **Super premium override:** Users with `superPremium` entitlement bypass all category locks
+7. **Real-time sync:** When admin toggles user access, server writes to Firebase RTDB `user_alerts/{uid}`, client listener updates UI instantly
+8. **Expiration:** Alert access auto-expires after 1 year; checked on every login/sync
+9. **Locked state:** Shows category intro video + "how to get free access" video for each locked category
+
+### Alert Access Management (Admin)
+1. Admin searches user by email or phone number (direct MongoDB query)
+2. Displays user profile with 3 toggle switches (SOB, XAUD, Crypto)
+3. Toggling ON sets 1-year expiration from current time
+4. Toggling OFF clears the flag and expiration
+5. Save calls `PUT /api/user/alert-access/:firebaseUid` on main server
+6. Server updates User document + syncs to Firebase RTDB for real-time client update
+
 ### Push Notifications
 - **Registration:** On login, FCM token sent to `POST /api/user/device/register`
 - **Targeted:** Server uses `sendEachForMulticast` to specific device tokens
@@ -670,10 +748,12 @@ All screens extend `ConsumerWidget` or `ConsumerStatefulWidget` to watch/read pr
 | 3 | **Unprotected AI endpoints** — no auth or rate limiting, anyone can consume OpenAI credits | **MEDIUM** | `chatRoutes.js` | Add auth + rate limiting |
 | 4 | **OTP returned in API response** — should only be sent via SMS | **MEDIUM** | `authController.js:24` | Remove OTP from response body |
 | 5 | **Admin client connects directly to MongoDB** — credentials embedded in Flutter client | **MEDIUM** | `mongodb_service.dart` | Route all writes through admin server API |
-| 6 | **No rate limiting anywhere** — vulnerable to abuse | **MEDIUM** | All routes | Add `express-rate-limit` |
-| 7 | **No input validation/sanitization** — relies on manual checks | **MEDIUM** | All controllers | Add `joi` or `zod` validation |
-| 8 | **Mock auth fallback** accepts any `mock-uid-*` | **LOW** | `middleware/auth.js:18` | Only in dev mode, acceptable |
-| 9 | **Live secrets in .env committed to git history** | **LOW** | `.env` files | Rotate keys, use git-secrets |
+| 6 | **Admin alert CRUD unprotected** — no auth on admin server alert endpoints | **MEDIUM** | `admin/server/routes/alertRoutes.js` | Add admin API key or auth middleware |
+| 7 | **No rate limiting anywhere** — vulnerable to abuse | **MEDIUM** | All routes | Add `express-rate-limit` |
+| 8 | **No input validation/sanitization** — relies on manual checks | **MEDIUM** | All controllers | Add `joi` or `zod` validation |
+| 9 | **Base64 images stored in DB** — large payloads in `alert_posts.imageBase64` | **LOW** | `AlertPost.js` | Consider cloud storage (S3, Cloudinary) for images |
+| 10 | **Mock auth fallback** accepts any `mock-uid-*` | **LOW** | `middleware/auth.js:18` | Only in dev mode, acceptable |
+| 11 | **Live secrets in .env committed to git history** | **LOW** | `.env` files | Rotate keys, use git-secrets |
 
 ---
 
@@ -754,12 +834,14 @@ flutter run                # or flutter build
 When working on this codebase, keep these facts in mind:
 
 1. **Architecture:** MVVM pattern throughout. Main client uses Riverpod; admin client uses Provider.
-2. **Two separate Flutter apps** — main client (`stock_archery/client/`) and admin client (`admin/client/admin/`). They share no code.
-3. **Two separate Node.js servers** — main server (`stock_archery/server/`) for end-user API; admin server (`admin/server/`) for F&O data fetching.
+2. **Two separate Flutter apps** — main client (`stock_archery/client/`, 40 Dart files) and admin client (`admin/client/admin/`, 11 Dart files). They share no code.
+3. **Two separate Node.js servers** — main server (`stock_archery/server/`) for end-user API; admin server (`admin/server/`) for F&O data fetching + alert CRUD.
 4. **Single MongoDB Atlas cluster** shared by all components (`stock_archery` database).
 5. **Firebase is optional in dev** — both client and server have graceful mock fallbacks when Firebase credentials are missing.
 6. **Express 5** (not 4) is used — note async error handling differences.
 7. **RevenueCat** handles premium subscriptions, not the backend.
 8. **OpenAI GPT-4o** is the AI model, using the newer Responses API (not Chat Completions).
 9. **The design system is "Aureum Elite"** — dark theme with gold accents. All custom tokens are in `utils/design_system/`.
-10. **No test suite exists** — both servers have `"test": "echo \"Error: no test specified\" && exit 1"` in package.json.
+10. **Alert system** has 3 categories (SOB, XAUD, Crypto) with per-user premium access gating and 1-year auto-expiration.
+11. **Real-time alert sync** uses Firebase RTDB path `user_alerts/{uid}` — server writes, client listens for instant UI updates.
+12. **No test suite exists** — both servers have `"test": "echo \"Error: no test specified\" && exit 1"` in package.json.

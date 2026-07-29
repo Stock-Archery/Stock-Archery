@@ -3,6 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
+import 'package:flutter/foundation.dart';
+
+void _log(String message) {
+  debugPrint('[log] $message');
+}
 
 class AuthService {
   final String baseUrl;
@@ -20,28 +25,40 @@ class AuthService {
 
   /// Request a mock 4-digit SMS OTP for phone verification
   Future<String> sendOtp(String phoneNumber) async {
+    final url = '$baseUrl/auth/send-otp';
+    _log('sendOtp → POST $url');
+    _log('sendOtp → body: {"phoneNumber": "$phoneNumber"}');
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/send-otp'),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'phoneNumber': phoneNumber}),
       );
 
+      _log('sendOtp ← status: ${response.statusCode}');
+      _log('sendOtp ← body: ${response.body}');
+
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         if (body['success'] == true) {
-          return body['otp']?.toString() ?? '';
+          final otp = body['otp']?.toString() ?? '';
+          _log('sendOtp ✓ OTP received: $otp');
+          return otp;
         }
+        _log('sendOtp ✗ Server error: ${body['message']}');
         throw Exception(body['message'] ?? 'Failed to send OTP');
       } else {
         try {
           final errBody = jsonDecode(response.body);
+          _log('sendOtp ✗ HTTP ${response.statusCode}: ${errBody['message']}');
           throw Exception(errBody['message'] ?? 'Failed to send OTP');
         } catch (_) {
+          _log('sendOtp ✗ HTTP ${response.statusCode}: ${response.body}');
           throw Exception('Failed to send OTP');
         }
       }
     } catch (e) {
+      _log('sendOtp ✗ Exception: ${e.toString()}');
       throw Exception('OTP service error: ${e.toString()}');
     }
   }
@@ -70,6 +87,9 @@ class AuthService {
     required String phoneNumber,
     required String location,
     required String password,
+    String? occupation,
+    String? occupationDetail,
+    String? gender,
   }) async {
     if (isFirebaseAvailable) {
       // 1. Create user in Firebase Auth
@@ -95,6 +115,9 @@ class AuthService {
           'name': name,
           'phoneNumber': phoneNumber,
           'location': location,
+          'occupation': occupation,
+          'occupationDetail': occupationDetail,
+          'gender': gender,
         }),
       );
 
@@ -125,6 +148,9 @@ class AuthService {
           'name': name,
           'phoneNumber': phoneNumber,
           'location': location,
+          'occupation': occupation,
+          'occupationDetail': occupationDetail,
+          'gender': gender,
         }),
       );
 
