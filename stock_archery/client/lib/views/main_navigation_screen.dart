@@ -26,7 +26,7 @@ class MainNavigationScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(navigationProvider);
     final user = ref.watch(authProvider).user;
-    final isPremium = ref.watch(premiumProvider).isPremium;
+    final isPremium = ref.watch(premiumProvider).superPremium;
 
     final List<Widget> screens = [
       const VideoListView(),

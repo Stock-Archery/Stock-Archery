@@ -27,11 +27,11 @@ class PremiumNotifier extends StateNotifier<PremiumState> {
 
   void _updateStatus(CustomerInfo customerInfo) {
     // 'premium' wahi entitlement ID hai jo aapne RevenueCat dashboard par banayi thi
-    bool hasPremium = customerInfo.entitlements.all['premium']?.isActive ?? false;
+    bool superPremium = customerInfo.entitlements.all['premium']?.isActive ?? false;
     
     state = state.copyWith(
       isLoading: false,
-      isPremium: hasPremium,
+      superPremium: superPremium,
       customerInfo: customerInfo,
       errorMessage: null,
     );
@@ -45,7 +45,7 @@ class PremiumNotifier extends StateNotifier<PremiumState> {
       final customerInfo = result.customerInfo;
       //CustomerInfo customerInfo = await Purchases.purchasePackage(package);
       _updateStatus(customerInfo);
-      return state.isPremium;
+      return state.superPremium;
     } catch (e) {
       //state = state.copyWith(isLoading: false, errorMessage: e.toString());
 

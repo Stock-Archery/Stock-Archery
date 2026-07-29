@@ -4,6 +4,7 @@ import 'package:client/models/video_model.dart';
 import 'package:client/utils/design_system/design_system.dart';
 import 'package:client/viewmodels/alerts_provider.dart';
 import 'package:client/viewmodels/auth_viewmodel.dart';
+import 'package:client/Features/payment/view_model/premium_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -17,8 +18,10 @@ class AlertsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final user = ref.watch(authProvider).user;
+    final isSuperPremium = ref.watch(premiumProvider).superPremium;
 
     bool isCategoryLocked(String category) {
+      if (isSuperPremium) return false;
       return switch (category) {
         'SOB' => user?.isSOBAlertPremium != true,
         'XAUD' => user?.isXaudAlertPremium != true,
