@@ -30,7 +30,7 @@ class MainNavigationScreen extends ConsumerWidget {
 
     final List<Widget> screens = [
       const VideoListView(),
-      const StocksView(),
+      // const StocksView(),
       const AiBotView(),
       const BrokersView(),
       const AlertsView(),
@@ -165,17 +165,17 @@ class MainNavigationScreen extends ConsumerWidget {
               ),
               label: 'Strategy',
             ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 3),
-                child: Icon(Icons.trending_up_outlined, size: 24),
-              ),
-              activeIcon: Padding(
-                padding: EdgeInsets.only(bottom: 3),
-                child: Icon(Icons.trending_up, size: 24),
-              ),
-              label: 'Stocks',
-            ),
+            // BottomNavigationBarItem(
+            //   icon: Padding(
+            //     padding: EdgeInsets.only(bottom: 3),
+            //     child: Icon(Icons.trending_up_outlined, size: 24),
+            //   ),
+            //   activeIcon: Padding(
+            //     padding: EdgeInsets.only(bottom: 3),
+            //     child: Icon(Icons.trending_up, size: 24),
+            //   ),
+            //   label: 'Stocks',
+            // ),
             BottomNavigationBarItem(
               icon: Padding(
                 padding: EdgeInsets.only(bottom: 3),
