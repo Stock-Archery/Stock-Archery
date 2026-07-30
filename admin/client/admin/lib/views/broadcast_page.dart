@@ -16,6 +16,12 @@ class _BroadcastPageState extends State<BroadcastPage> {
   bool _isSending = false;
 
   @override
+  void initState() {
+    super.initState();
+    _bodyController.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _bodyController.dispose();
