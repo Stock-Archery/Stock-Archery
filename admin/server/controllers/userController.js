@@ -2,8 +2,10 @@ import User from "../models/User.js";
 
 export const searchUser = async (req, res) => {
   const { query } = req.query;
+  console.log(`[log] GET /users/search — query: "${query}"`);
 
   if (!query || query.trim().length === 0) {
+    console.log("[log] GET /users/search — 400: empty query");
     return res.status(400).json({ status: "error", message: "Query parameter is required" });
   }
 
@@ -16,12 +18,14 @@ export const searchUser = async (req, res) => {
     });
 
     if (!user) {
+      console.log(`[log] GET /users/search — 404: no user found for "${query}"`);
       return res.status(404).json({ status: "error", message: "User not found" });
     }
 
+    console.log(`[log] GET /users/search — 200: found user ${user.email} (${user.firebaseUid})`);
     res.json({ status: "success", user });
   } catch (err) {
-    console.error("Error searching user:", err.message);
+    console.error("[log] GET /users/search — 500:", err.message);
     res.status(500).json({ status: "error", message: "Failed to search user" });
   }
 };
@@ -29,10 +33,12 @@ export const searchUser = async (req, res) => {
 export const updateUserAlertAccess = async (req, res) => {
   const { firebaseUid } = req.params;
   const { isSOB_alert_premium, isXaud_alert_premium, isCrypto_alert_premium } = req.body;
+  console.log(`[log] PUT /users/alert-access/${firebaseUid} — body:`, JSON.stringify(req.body));
 
   try {
     const user = await User.findOne({ firebaseUid });
     if (!user) {
+      console.log(`[log] PUT /users/alert-access/${firebaseUid} — 404: user not found`);
       return res.status(404).json({ status: "error", message: "User not found" });
     }
 
@@ -55,6 +61,7 @@ export const updateUserAlertAccess = async (req, res) => {
     }
 
     await user.save();
+    console.log(`[log] PUT /users/alert-access/${firebaseUid} — 200: updated successfully`);
 
     res.json({
       status: "success",
@@ -62,7 +69,7 @@ export const updateUserAlertAccess = async (req, res) => {
       user,
     });
   } catch (err) {
-    console.error("Error updating user alert access:", err.message);
+    console.error(`[log] PUT /users/alert-access/${firebaseUid} — 500:`, err.message);
     res.status(500).json({ status: "error", message: "Failed to update alert access" });
   }
 };

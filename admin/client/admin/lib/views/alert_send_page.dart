@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../viewmodels/alert_viewmodel.dart';
+import '../services/notification_service.dart';
 
 class AlertSendPage extends StatefulWidget {
   const AlertSendPage({super.key});
@@ -14,18 +15,32 @@ class AlertSendPage extends StatefulWidget {
 
 class _AlertSendPageState extends State<AlertSendPage> {
   final TextEditingController _messageController = TextEditingController();
+  final TextEditingController _notificationController = TextEditingController();
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AlertViewModel>().loadAlerts();
+      final viewModel = context.read<AlertViewModel>();
+      viewModel.loadAlerts();
+      _updateNotificationDefault(viewModel.selectedCategory);
     });
+  }
+
+  void _updateNotificationDefault(String category) {
+    final defaults = {
+      'SOB': 'Hey Users, an exciting SOB alert just dropped, check it out',
+      'XAUD': 'Hey Users, an exciting XAUD alert just dropped, check it out',
+      'Crypto': 'Hey Users, an exciting Crypto alert just dropped, check it out',
+    };
+    _notificationController.text = defaults[category] ?? '';
   }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _notificationController.dispose();
     super.dispose();
   }
 
@@ -70,7 +85,10 @@ class _AlertSendPageState extends State<AlertSendPage> {
                     final isSelected = viewModel.selectedCategory == cat;
                     return Expanded(
                       child: GestureDetector(
-                        onTap: () => viewModel.setCategory(cat),
+                        onTap: () {
+                          viewModel.setCategory(cat);
+                          _updateNotificationDefault(cat);
+                        },
                         child: Container(
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -209,6 +227,37 @@ class _AlertSendPageState extends State<AlertSendPage> {
 
                 const SizedBox(height: 24),
 
+                // Notification message input
+                Text(
+                  'Notification Message (sent to all users)',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: TextField(
+                    controller: _notificationController,
+                    maxLines: 2,
+                    style: GoogleFonts.outfit(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Notification message for users...',
+                      hintStyle: GoogleFonts.outfit(color: Colors.white38),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
                 // Send button
                 SizedBox(
                   width: double.infinity,
@@ -219,7 +268,18 @@ class _AlertSendPageState extends State<AlertSendPage> {
                             viewModel.message.trim().isEmpty
                         ? null
                         : () async {
+                            print('[log] AlertSendPage — sending alert...');
                             final success = await viewModel.sendAlert();
+
+                            // Broadcast notification if message is not empty
+                            if (success && _notificationController.text.trim().isNotEmpty) {
+                              print('[log] AlertSendPage — broadcasting notification...');
+                              await _notificationService.broadcast(
+                                title: viewModel.selectedCategory,
+                                body: _notificationController.text.trim(),
+                              );
+                            }
+
                             _messageController.clear();
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(

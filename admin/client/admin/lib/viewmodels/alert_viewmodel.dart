@@ -28,6 +28,7 @@ class AlertViewModel extends ChangeNotifier {
   bool get isLoadingAlerts => _isLoadingAlerts;
 
   void setCategory(String category) {
+    print('[log] AlertViewModel — setCategory: $category');
     _selectedCategory = category;
     notifyListeners();
     loadAlerts();
@@ -68,6 +69,7 @@ class AlertViewModel extends ChangeNotifier {
   Future<bool> sendAlert() async {
     if (_pickedImage == null || _message.trim().isEmpty) return false;
 
+    print('[log] AlertViewModel — sendAlert: category=$_selectedCategory, message=${_message.substring(0, _message.length > 50 ? 50 : _message.length)}...');
     _isSending = true;
     notifyListeners();
 
@@ -81,6 +83,7 @@ class AlertViewModel extends ChangeNotifier {
         base64Image,
       );
 
+      print('[log] AlertViewModel — sendAlert: success');
       _pickedImage = null;
       _message = '';
       _isSending = false;
@@ -89,7 +92,7 @@ class AlertViewModel extends ChangeNotifier {
       await loadAlerts();
       return true;
     } catch (e) {
-      debugPrint('Error sending alert: $e');
+      print('[log] AlertViewModel — sendAlert error: $e');
       _isSending = false;
       notifyListeners();
       return false;
@@ -97,13 +100,15 @@ class AlertViewModel extends ChangeNotifier {
   }
 
   Future<void> loadAlerts() async {
+    print('[log] AlertViewModel — loadAlerts: category=$_selectedCategory');
     _isLoadingAlerts = true;
     notifyListeners();
 
     try {
       _alerts = await _apiService.getAlerts(_selectedCategory);
+      print('[log] AlertViewModel — loadAlerts: loaded ${_alerts.length} alerts');
     } catch (e) {
-      debugPrint('Error loading alerts: $e');
+      print('[log] AlertViewModel — loadAlerts error: $e');
       _alerts = [];
     } finally {
       _isLoadingAlerts = false;
@@ -112,14 +117,16 @@ class AlertViewModel extends ChangeNotifier {
   }
 
   Future<bool> deleteAlert(String id) async {
+    print('[log] AlertViewModel — deleteAlert: id=$id');
     try {
       final success = await _apiService.deleteAlert(id);
+      print('[log] AlertViewModel — deleteAlert result: $success');
       if (success) {
         await loadAlerts();
       }
       return success;
     } catch (e) {
-      debugPrint('Error deleting alert: $e');
+      print('[log] AlertViewModel — deleteAlert error: $e');
       return false;
     }
   }

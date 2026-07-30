@@ -6,6 +6,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import alertRoutes from "./routes/alertRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import broadcastRoutes from "./routes/broadcastRoutes.js";
+import { initFirebase } from "./config/firebase.js";
 
 dotenv.config();
 
@@ -15,9 +17,13 @@ app.use(express.json({ limit: '50mb' }));
 
 const PORT = process.env.PORT || 3000;
 
+// Initialize Firebase Admin SDK
+initFirebase();
+
 // Mount routes
 app.use("/alerts", alertRoutes);
 app.use("/users", userRoutes);
+app.use("/broadcast", broadcastRoutes);
 
 app.get("/", (req, res) => {
     res.json({ status: "ok", message: "Stock Archery Server is running" });
@@ -26,9 +32,10 @@ const MONGO_URI = process.env.mongoUri;
 const DATA_URL = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz";
 
 // Connect to MongoDB
+console.log("[log] Connecting to MongoDB...");
 mongoose.connect(MONGO_URI)
-    .then(() => console.log("Connected to MongoDB Atlas"))
-    .catch(err => console.error("MongoDB connection error:", err));
+    .then(() => console.log("[log] Connected to MongoDB Atlas"))
+    .catch(err => console.error("[log] MongoDB connection error:", err));
 
 // Define Schema for F&O Stocks
 const fnoStockSchema = new mongoose.Schema({
@@ -124,5 +131,6 @@ app.post("/refresh-fno", async (req, res) => {
 
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`[log] Server running on http://localhost:${PORT}`);
+    console.log(`[log] Routes: /alerts, /users, /broadcast`);
 });
