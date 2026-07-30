@@ -26,6 +26,7 @@ app.use("/users", userRoutes);
 app.use("/broadcast", broadcastRoutes);
 
 const startedAt = new Date().toISOString();
+const lastUpdated = new Date().toISOString();
 
 app.get("/", (req, res) => {
     res.json({
@@ -33,6 +34,7 @@ app.get("/", (req, res) => {
         message: "Stock Archery Admin Server is running",
         version: "1.0.0",
         startedAt,
+        lastUpdated,
         uptime: Math.floor(process.uptime()) + "s",
     });
 });
