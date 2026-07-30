@@ -39,7 +39,7 @@ class AuthWrapper extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                "ArrowAI",
+                "Trade Genie",
                 style: GoogleFonts.inter(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
