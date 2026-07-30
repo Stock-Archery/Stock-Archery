@@ -25,8 +25,16 @@ app.use("/alerts", alertRoutes);
 app.use("/users", userRoutes);
 app.use("/broadcast", broadcastRoutes);
 
+const startedAt = new Date().toISOString();
+
 app.get("/", (req, res) => {
-    res.json({ status: "ok", message: "Stock Archery Server is running" });
+    res.json({
+        status: "ok",
+        message: "Stock Archery Admin Server is running",
+        version: "1.0.0",
+        startedAt,
+        uptime: Math.floor(process.uptime()) + "s",
+    });
 });
 const MONGO_URI = process.env.mongoUri;
 const DATA_URL = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz";
