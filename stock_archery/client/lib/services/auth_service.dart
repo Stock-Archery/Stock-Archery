@@ -3,6 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
+import 'package:flutter/foundation.dart';
+
+void _log(String message) {
+  debugPrint('[log] $message');
+}
 
 class AuthService {
   final String baseUrl;
@@ -20,29 +25,128 @@ class AuthService {
 
   /// Request a mock 4-digit SMS OTP for phone verification
   Future<String> sendOtp(String phoneNumber) async {
+    final url = '$baseUrl/auth/send-otp';
+    _log('sendOtp → POST $url');
+    _log('sendOtp → body: {"phoneNumber": "$phoneNumber"}');
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/send-otp'),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'phoneNumber': phoneNumber}),
       );
 
+      _log('sendOtp ← status: ${response.statusCode}');
+      _log('sendOtp ← body: ${response.body}');
+
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         if (body['success'] == true) {
-          return body['otp']?.toString() ?? '';
+          final otp = body['otp']?.toString() ?? '';
+          _log('sendOtp ✓ OTP received: $otp');
+          return otp;
         }
+        _log('sendOtp ✗ Server error: ${body['message']}');
         throw Exception(body['message'] ?? 'Failed to send OTP');
       } else {
         try {
           final errBody = jsonDecode(response.body);
+          _log('sendOtp ✗ HTTP ${response.statusCode}: ${errBody['message']}');
           throw Exception(errBody['message'] ?? 'Failed to send OTP');
         } catch (_) {
+          _log('sendOtp ✗ HTTP ${response.statusCode}: ${response.body}');
           throw Exception('Failed to send OTP');
         }
       }
     } catch (e) {
+      _log('sendOtp ✗ Exception: ${e.toString()}');
       throw Exception('OTP service error: ${e.toString()}');
+    }
+  }
+
+  /// Verify OTP only (for signup phone verification, no login)
+  Future<void> verifyOtpOnly(String phoneNumber, String otp) async {
+    final url = '$baseUrl/auth/verify-otp-only';
+    _log('verifyOtpOnly → POST $url');
+    _log('verifyOtpOnly → body: {"phoneNumber": "$phoneNumber", "otp": "$otp"}');
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phoneNumber': phoneNumber, 'otp': otp}),
+      );
+
+      _log('verifyOtpOnly ← status: ${response.statusCode}');
+      _log('verifyOtpOnly ← body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true) {
+          _log('verifyOtpOnly ✓ OTP verified');
+          return;
+        }
+        throw Exception(body['message'] ?? 'OTP verification failed');
+      } else {
+        final errBody = jsonDecode(response.body);
+        throw Exception(errBody['message'] ?? 'Invalid OTP');
+      }
+    } catch (e) {
+      _log('verifyOtpOnly ✗ Exception: ${e.toString()}');
+      if (e is Exception) rethrow;
+      throw Exception('OTP verification error: ${e.toString()}');
+    }
+  }
+
+  /// Verify OTP with server and login with existing account
+  Future<UserModel> loginWithOtp(String phoneNumber, String otp) async {
+    final url = '$baseUrl/auth/verify-otp';
+    _log('loginWithOtp → POST $url');
+    _log('loginWithOtp → body: {"phoneNumber": "$phoneNumber", "otp": "$otp"}');
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phoneNumber': phoneNumber, 'otp': otp}),
+      );
+
+      _log('loginWithOtp ← status: ${response.statusCode}');
+      _log('loginWithOtp ← body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true) {
+          final customToken = body['customToken'] as String?;
+          final userData = body['user'];
+
+          if (isFirebaseAvailable && customToken != null) {
+            // Sign in with Firebase custom token
+            _log('loginWithOtp → Signing in with Firebase custom token...');
+            await FirebaseAuth.instance.signInWithCustomToken(customToken);
+            _log('loginWithOtp ✓ Firebase sign-in successful');
+          } else {
+            _log('loginWithOtp → No custom token or Firebase unavailable, using mock mode');
+            _mockUser = UserModel.fromJson(userData);
+            _isMockLoggedIn = true;
+          }
+
+          return UserModel.fromJson(userData);
+        }
+        _log('loginWithOtp ✗ Server error: ${body['message']}');
+        throw Exception(body['message'] ?? 'OTP verification failed');
+      } else {
+        try {
+          final errBody = jsonDecode(response.body);
+          _log('loginWithOtp ✗ HTTP ${response.statusCode}: ${errBody['message']}');
+          throw Exception(errBody['message'] ?? 'OTP verification failed');
+        } catch (e) {
+          if (e is Exception) rethrow;
+          _log('loginWithOtp ✗ HTTP ${response.statusCode}: ${response.body}');
+          throw Exception('OTP verification failed');
+        }
+      }
+    } catch (e) {
+      _log('loginWithOtp ✗ Exception: ${e.toString()}');
+      if (e is Exception) rethrow;
+      throw Exception('OTP login error: ${e.toString()}');
     }
   }
 
@@ -70,6 +174,9 @@ class AuthService {
     required String phoneNumber,
     required String location,
     required String password,
+    String? occupation,
+    String? occupationDetail,
+    String? gender,
   }) async {
     if (isFirebaseAvailable) {
       // 1. Create user in Firebase Auth
@@ -95,6 +202,9 @@ class AuthService {
           'name': name,
           'phoneNumber': phoneNumber,
           'location': location,
+          'occupation': occupation,
+          'occupationDetail': occupationDetail,
+          'gender': gender,
         }),
       );
 
@@ -125,6 +235,9 @@ class AuthService {
           'name': name,
           'phoneNumber': phoneNumber,
           'location': location,
+          'occupation': occupation,
+          'occupationDetail': occupationDetail,
+          'gender': gender,
         }),
       );
 

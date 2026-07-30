@@ -1,4 +1,5 @@
 const axios = require('axios');
+const User = require('../models/User');
 
 // Helper to parse OpenAI Responses API timeline
 function parseOpenAIResponse(apiResponse) {
@@ -70,8 +71,21 @@ function parseOpenAIResponse(apiResponse) {
 }
 
 exports.chat = async (req, res) => {
-  const { message } = req.body;
+  const { message, isPremium } = req.body;
+  const uid = req.user.uid;
   if (!message) return res.status(400).json({ message: 'Message is required' });
+
+  let user;
+  try {
+    user = await User.findOne({ firebaseUid: uid });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (!isPremium && user.textChatCount >= 5) {
+      return res.status(403).json({ limitReached: true, message: 'Free chat limit reached' });
+    }
+  } catch (err) {
+    return res.status(500).json({ message: 'Database error', error: err.message });
+  }
 
   const fetchAIResponse = async (isRetry = false) => {
     try {
@@ -122,6 +136,11 @@ exports.chat = async (req, res) => {
         citationCount: parsed.citations.length
       });
 
+      if (!isPremium && parsed.reply) {
+        user.textChatCount = (user.textChatCount || 0) + 1;
+        await user.save();
+      }
+
       return res.json(parsed);
 
     } catch (err) {
@@ -134,7 +153,12 @@ exports.chat = async (req, res) => {
 };
 
 exports.chartAnalysis = async (req, res) => {
-  const { message, image } = req.body; // 'image' should be base64 string
+  const { message, image, isPremium } = req.body; // 'image' should be base64 string
+  
+  if (!isPremium) {
+    return res.status(403).json({ limitReached: true, message: 'Chart analysis is a premium feature' });
+  }
+  
   if (!message || !image) {
     return res.status(400).json({ message: 'Both message and image are required for chart analysis' });
   }

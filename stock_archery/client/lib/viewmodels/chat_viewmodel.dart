@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/app_config.dart';
@@ -47,7 +48,7 @@ class ChatViewModel extends StateNotifier<ChatState> {
 
   static String get baseUrl => AppConfig.baseUrl;
 
-  void onSend(ChatMessage message, {XFile? imageFile}) async {
+  void onSend(ChatMessage message, {XFile? imageFile, required bool isPremium}) async {
     state = state.copyWith(
       messages: [message, ...state.messages],
       isLoading: true,
@@ -55,9 +56,11 @@ class ChatViewModel extends StateNotifier<ChatState> {
 
     try {
       final endpoint = isChart ? '/chart-analysis' : '/chat';
+      final token = await FirebaseAuth.instance.currentUser?.getIdToken();
 
       Map<String, dynamic> body = {
         'message': message.text,
+        'isPremium': isPremium,
       };
 
       if (isChart && imageFile != null) {
@@ -67,7 +70,10 @@ class ChatViewModel extends StateNotifier<ChatState> {
 
       final response = await http.post(
         Uri.parse('$baseUrl$endpoint'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
         body: json.encode(body),
       );
 
@@ -85,6 +91,13 @@ class ChatViewModel extends StateNotifier<ChatState> {
           messages: [botMessage, ...state.messages],
           isLoading: false,
         );
+      } else if (response.statusCode == 403) {
+        final data = json.decode(response.body);
+        if (data['limitReached'] == true) {
+          _showError('Premium limit reached. Please upgrade to continue.');
+        } else {
+          _showError('Error: ${data['message']}');
+        }
       } else {
         _showError('Error: Server responded with ${response.statusCode}');
       }

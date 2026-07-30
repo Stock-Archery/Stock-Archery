@@ -27,12 +27,14 @@ class AuthState {
   final bool isLoading;
   final String? errorMessage;
   final bool isKickedOut;
+  final bool isInitializing;
 
   AuthState({
     this.user,
     this.isLoading = false,
     this.errorMessage,
     this.isKickedOut = false,
+    this.isInitializing = false,
   });
 
   AuthState copyWith({
@@ -40,6 +42,7 @@ class AuthState {
     bool? isLoading,
     String? errorMessage,
     bool? isKickedOut,
+    bool? isInitializing,
     bool clearError = false,
   }) {
     return AuthState(
@@ -47,6 +50,7 @@ class AuthState {
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isKickedOut: isKickedOut ?? this.isKickedOut,
+      isInitializing: isInitializing ?? this.isInitializing,
     );
   }
 }
@@ -56,7 +60,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
   final Ref _ref;
   StreamSubscription<DatabaseEvent>? _alertsSubscription; // Subscription for real-time alert updates
 
-  AuthViewModel(this._authService, this._ref) : super(AuthState()) {
+  AuthViewModel(this._authService, this._ref) : super(AuthState(isInitializing: true)) {
     _listenToAuthChanges();
   }
 
@@ -65,7 +69,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       _authService.authStateChanges.listen((firebaseUser) async {
         if (firebaseUser == null) {
           _cancelAlertsSubscription(); // Cancel listener on logout
-          state = AuthState(user: null);
+          state = AuthState(user: null, isInitializing: false);
         } else {
           // If a firebase session already exists, sync with backend to get MongoDB profile
           try {
@@ -84,7 +88,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
             // Sync with backend using current token
             final response = await _authService.syncProfile(idToken);
 
-            state = AuthState(user: response, isLoading: false);
+            state = AuthState(user: response, isLoading: false, isInitializing: false);
 
             // Start listening to real-time premium updates from Firebase Realtime Database
             _listenToAlertAccessChanges(firebaseUser.uid);
@@ -133,27 +137,111 @@ class AuthViewModel extends StateNotifier<AuthState> {
             state = AuthState(
               user: null,
               isLoading: false,
+              isInitializing: false,
               errorMessage: "Failed to sync profile: ${e.toString()}",
             );
           }
         }
       });
+    } else {
+      state = state.copyWith(isInitializing: false);
     }
   }
 
   /// Request SMS OTP for a phone number
   Future<String?> sendOtp(String phoneNumber) async {
+    debugPrint('[log] [AuthViewModel] sendOtp called for: $phoneNumber');
     try {
       state = state.copyWith(isLoading: true, clearError: true);
       final otp = await _authService.sendOtp(phoneNumber);
+      debugPrint('[log] [AuthViewModel] sendOtp success');
       state = state.copyWith(isLoading: false);
       return otp;
     } catch (e) {
+      debugPrint('[log] [AuthViewModel] sendOtp failed: $e');
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll("Exception: ", ""),
       );
       return null;
+    }
+  }
+
+  /// Verify OTP only (for signup phone verification)
+  Future<bool> verifyOtpOnly(String phoneNumber, String otp) async {
+    debugPrint('[log] [AuthViewModel] verifyOtpOnly called for: $phoneNumber');
+    try {
+      await _authService.verifyOtpOnly(phoneNumber, otp);
+      debugPrint('[log] [AuthViewModel] verifyOtpOnly success');
+      return true;
+    } catch (e) {
+      debugPrint('[log] [AuthViewModel] verifyOtpOnly failed: $e');
+      return false;
+    }
+  }
+
+  /// Verify OTP and login with existing account
+  Future<bool> loginWithOtp(String phoneNumber, String otp) async {
+    debugPrint('[log] [AuthViewModel] loginWithOtp called for: $phoneNumber');
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final user = await _authService.loginWithOtp(phoneNumber, otp);
+
+      debugPrint('[log] [AuthViewModel] loginWithOtp success, registering session...');
+      await _ref.read(sessionServiceProvider).saveNewSession(user.firebaseUid);
+
+      // Register FCM token
+      try {
+        final token = await FirebaseMessaging.instance.getToken();
+        if (token != null) {
+          await FirebaseMessaging.instance.subscribeToTopic('all_users');
+          debugPrint('[log] [AuthViewModel] Subscribed to all_users topic.');
+
+          final deviceInfo = DeviceInfoPlugin();
+          String deviceId = 'unknown_device';
+          String platform = 'unknown';
+
+          if (Platform.isAndroid) {
+            final info = await deviceInfo.androidInfo;
+            deviceId = info.id;
+            platform = 'android';
+          } else if (Platform.isIOS) {
+            final info = await deviceInfo.iosInfo;
+            deviceId = info.identifierForVendor ?? 'unknown_ios';
+            platform = 'ios';
+          }
+
+          final apiUrl = AppConfig.baseUrl;
+          final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+          if (idToken != null) {
+            await http.post(
+              Uri.parse('$apiUrl/user/device/register'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $idToken',
+              },
+              body: jsonEncode({
+                'token': token,
+                'deviceId': deviceId,
+                'platform': platform,
+              }),
+            );
+            debugPrint('[log] [AuthViewModel] FCM token registered.');
+          }
+        }
+      } catch (e) {
+        debugPrint('[log] [AuthViewModel] FCM registration failed: $e');
+      }
+
+      state = AuthState(user: user, isLoading: false);
+      return true;
+    } catch (e) {
+      debugPrint('[log] [AuthViewModel] loginWithOtp failed: $e');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString().replaceAll("Exception: ", ""),
+      );
+      return false;
     }
   }
 
@@ -164,6 +252,9 @@ class AuthViewModel extends StateNotifier<AuthState> {
     required String phoneNumber,
     required String location,
     required String password,
+    String? occupation,
+    String? occupationDetail,
+    String? gender,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -174,6 +265,9 @@ class AuthViewModel extends StateNotifier<AuthState> {
         phoneNumber: phoneNumber,
         location: location,
         password: password,
+        occupation: occupation,
+        occupationDetail: occupationDetail,
+        gender: gender,
       );
 
       // Save a new session ID for this newly registered user

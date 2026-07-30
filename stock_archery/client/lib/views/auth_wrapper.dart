@@ -17,8 +17,8 @@ class AuthWrapper extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final authService = ref.read(authServiceProvider);
 
-    // If it's loading, show a beautiful splash screen
-    if (authState.isLoading) {
+    // If it's initializing, show a beautiful splash screen
+    if (authState.isInitializing) {
       return Scaffold(
         backgroundColor: Colors.white,
         body: Center(

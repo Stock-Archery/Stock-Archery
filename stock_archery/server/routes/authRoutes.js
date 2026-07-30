@@ -4,6 +4,8 @@ const authController = require('../controllers/authController');
 const requireAuth = require('../middleware/auth');
 
 router.post('/send-otp', authController.sendOtp);
+router.post('/verify-otp', authController.verifyOtp);
+router.post('/verify-otp-only', authController.verifyOtpOnly);
 router.post('/sync', requireAuth, authController.syncUser);
 
 module.exports = router;
