@@ -4,11 +4,11 @@ export const createAlert = async (req, res) => {
   const { category, text, imageBase64 } = req.body;
   console.log(`[log] POST /alerts/create — category: ${category}, text: ${text?.substring(0, 50)}...`);
 
-  if (!category || !text || !imageBase64) {
+  if (!category || !text) {
     console.log("[log] POST /alerts/create — 400: missing required fields");
     return res
       .status(400)
-      .json({ status: "error", message: "category, text, and imageBase64 are required" });
+      .json({ status: "error", message: "category and text are required" });
   }
 
   if (!["SOB", "XAUD", "Crypto"].includes(category)) {
@@ -19,7 +19,7 @@ export const createAlert = async (req, res) => {
   }
 
   try {
-    const alert = await AlertPost.create({ category, text, imageBase64 });
+    const alert = await AlertPost.create({ category, text, imageBase64: imageBase64 || null });
     console.log(`[log] POST /alerts/create — 201: alert created, id: ${alert._id}`);
     res.status(201).json({ status: "success", alert });
   } catch (err) {

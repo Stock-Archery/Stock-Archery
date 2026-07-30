@@ -433,30 +433,31 @@ class _AlertPostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Full-width chart image
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadii.base),
-            ),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => _FullScreenImage(
-                      imageBase64: post.imageBase64,
-                      title: post.category,
+          // Full-width chart image (only if present)
+          if (post.imageBase64 != null && post.imageBase64!.isNotEmpty)
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadii.base),
+              ),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => _FullScreenImage(
+                        imageBase64: post.imageBase64!,
+                        title: post.category,
+                      ),
                     ),
-                  ),
-                );
-              },
-              child: Image.memory(
-                base64Decode(post.imageBase64),
-                fit: BoxFit.fitWidth,
-                width: double.infinity,
+                  );
+                },
+                child: Image.memory(
+                  base64Decode(post.imageBase64!),
+                  fit: BoxFit.fitWidth,
+                  width: double.infinity,
+                ),
               ),
             ),
-          ),
 
           // Text + timestamp
           Padding(

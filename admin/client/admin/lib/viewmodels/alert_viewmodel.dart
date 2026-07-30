@@ -67,15 +67,18 @@ class AlertViewModel extends ChangeNotifier {
   }
 
   Future<bool> sendAlert() async {
-    if (_pickedImage == null || _message.trim().isEmpty) return false;
+    if (_message.trim().isEmpty) return false;
 
     print('[log] AlertViewModel — sendAlert: category=$_selectedCategory, message=${_message.substring(0, _message.length > 50 ? 50 : _message.length)}...');
     _isSending = true;
     notifyListeners();
 
     try {
-      final bytes = await _pickedImage!.readAsBytes();
-      final base64Image = base64Encode(bytes);
+      String? base64Image;
+      if (_pickedImage != null) {
+        final bytes = await _pickedImage!.readAsBytes();
+        base64Image = base64Encode(bytes);
+      }
 
       await _apiService.createAlert(
         _selectedCategory,
