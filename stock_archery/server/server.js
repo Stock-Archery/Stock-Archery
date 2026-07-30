@@ -40,10 +40,19 @@ initFirebase();
 connectDB();
 
 const PORT = process.env.PORT || 5000;
+const startedAt = new Date().toISOString();
+const lastUpdated = new Date().toISOString();
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ status: "ok", message: "Stock Archery Main Server", version: "1.0.1" });
+  res.json({
+    status: "ok",
+    message: "Stock Archery Main Server",
+    version: "1.0.2",
+    startedAt,
+    lastUpdated,
+    uptime: Math.floor(process.uptime()) + "s",
+  });
 });
 
 // Mount routers

@@ -45,12 +45,12 @@ class _SignupViewState extends ConsumerState<SignupView> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
-  final _locationController = TextEditingController();
+  final _stateController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _occupationDetailController = TextEditingController();
 
   bool _obscurePassword = true;
   String? _selectedOccupation;
+  String? _selectedTradingExperience;
   String? _selectedGender;
 
   // Step and OTP flow variables
@@ -71,9 +71,8 @@ class _SignupViewState extends ConsumerState<SignupView> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _locationController.dispose();
+    _stateController.dispose();
     _passwordController.dispose();
-    _occupationDetailController.dispose();
     for (var controller in _otpControllers) {
       controller.dispose();
     }
@@ -158,12 +157,10 @@ class _SignupViewState extends ConsumerState<SignupView> {
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
           phoneNumber: cleanPhone,
-          location: _locationController.text.trim(),
+          userState: _stateController.text.trim(),
           password: _passwordController.text.trim(),
           occupation: _selectedOccupation,
-          occupationDetail: _selectedOccupation == 'others'
-              ? _occupationDetailController.text.trim()
-              : null,
+          tradingExperience: _selectedTradingExperience,
           gender: _selectedGender,
         );
 
@@ -530,21 +527,21 @@ class _SignupViewState extends ConsumerState<SignupView> {
 
           const SizedBox(height: 20),
 
-          // Location
+          // State
           Text(
-            "Location",
+            "State",
             style: AppTypography.labelSm(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           TextFormField(
-            controller: _locationController,
+            controller: _stateController,
             style: AppTypography.bodyMd(color: AppColors.onSurface),
             decoration: _buildInputDecoration(
-              "e.g. Mumbai, India",
-              Icons.location_on_outlined,
+              "e.g. Maharashtra",
+              Icons.map_outlined,
             ),
             validator: (val) => val == null || val.trim().isEmpty
-                ? 'Location is required'
+                ? 'State is required'
                 : null,
           ),
 
@@ -580,32 +577,55 @@ class _SignupViewState extends ConsumerState<SignupView> {
               style: AppTypography.bodyMd(color: AppColors.onSurface),
               items: const [
                 DropdownMenuItem(value: 'student', child: Text('Student')),
-                DropdownMenuItem(value: 'businessman', child: Text('Businessman')),
-                DropdownMenuItem(value: 'others', child: Text('Others')),
+                DropdownMenuItem(value: 'business', child: Text('Business')),
+                DropdownMenuItem(value: 'self_employed', child: Text('Self Employed')),
+                DropdownMenuItem(value: 'government_job', child: Text('Government Job')),
+                DropdownMenuItem(value: 'private_sector_job', child: Text('Private Sector Job')),
               ],
               onChanged: (val) => setState(() => _selectedOccupation = val),
               validator: (val) => val == null ? 'Occupation is required' : null,
             ),
           ),
 
-          // Occupation detail (shown only when "others" is selected)
-          if (_selectedOccupation == 'others') ...[
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _occupationDetailController,
-              style: AppTypography.bodyMd(color: AppColors.onSurface),
-              decoration: _buildInputDecoration(
-                "Specify your occupation",
-                Icons.edit_outlined,
-              ),
-              validator: (val) {
-                if (_selectedOccupation == 'others' && (val == null || val.trim().isEmpty)) {
-                  return 'Please specify your occupation';
-                }
-                return null;
-              },
+          const SizedBox(height: 20),
+
+          // Trading Experience
+          Text(
+            "Trading Experience",
+            style: AppTypography.labelSm(color: AppColors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.outlineVariant),
             ),
-          ],
+            child: DropdownButtonFormField<String>(
+              value: _selectedTradingExperience,
+              dropdownColor: AppColors.surfaceContainerLow,
+              hint: Text(
+                "Select your experience level",
+                style: AppTypography.bodyMd(color: AppColors.subtleGrey),
+              ),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.onSurfaceVariant),
+              borderRadius: BorderRadius.circular(12),
+              isExpanded: true,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.show_chart, size: 20, color: AppColors.onSurfaceVariant),
+                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                border: InputBorder.none,
+              ),
+              style: AppTypography.bodyMd(color: AppColors.onSurface),
+              items: const [
+                DropdownMenuItem(value: 'beginner', child: Text('Beginner')),
+                DropdownMenuItem(value: 'intermediate', child: Text('Intermediate')),
+                DropdownMenuItem(value: 'experienced', child: Text('Experienced')),
+              ],
+              onChanged: (val) => setState(() => _selectedTradingExperience = val),
+              validator: (val) => val == null ? 'Trading experience is required' : null,
+            ),
+          ),
 
           const SizedBox(height: 20),
 

@@ -172,7 +172,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "ArrowAI",
+                "Trade Genie",
                 style: GoogleFonts.montserrat(
                   color: AppColors.onSurface,
                   fontSize: 18,
@@ -300,7 +300,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
             ),
             const SizedBox(height: 24),
             Text(
-              "ArrowAI by Stock Archery",
+              "Trade Genie by Stock Archery",
               style: GoogleFonts.montserrat(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
@@ -550,7 +550,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
           ),
           const SizedBox(height: 8),
           Text(
-            "Stock Archery • ArrowAI — No buy/sell signals. Observation only.",
+            "Stock Archery • Trade Genie — No buy/sell signals. Observation only.",
             style: GoogleFonts.inter(
               fontSize: 10,
               color: AppColors.subtleGrey.withValues(alpha: 0.8),

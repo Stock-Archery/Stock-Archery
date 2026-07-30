@@ -264,7 +264,6 @@ class _AlertSendPageState extends State<AlertSendPage> {
                   height: 52,
                   child: ElevatedButton(
                     onPressed: viewModel.isSending ||
-                            viewModel.pickedImage == null ||
                             viewModel.message.trim().isEmpty
                         ? null
                         : () async {
@@ -357,17 +356,18 @@ class _AlertSendPageState extends State<AlertSendPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(16),
+                            if (alert.imageBase64 != null && alert.imageBase64!.isNotEmpty)
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(16),
+                                ),
+                                child: Image.memory(
+                                  base64Decode(alert.imageBase64!),
+                                  fit: BoxFit.fitWidth,
+                                  width: double.infinity,
+                                  height: 150,
+                                ),
                               ),
-                              child: Image.memory(
-                                base64Decode(alert.imageBase64),
-                                fit: BoxFit.fitWidth,
-                                width: double.infinity,
-                                height: 150,
-                              ),
-                            ),
                             Padding(
                               padding: const EdgeInsets.all(12),
                               child: Row(

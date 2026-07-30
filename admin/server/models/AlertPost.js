@@ -14,7 +14,7 @@ const alertPostSchema = new mongoose.Schema(
     },
     imageBase64: {
       type: String,
-      required: true,
+      default: null,
     },
   },
   { timestamps: true, collection: "alert_posts" }

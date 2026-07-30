@@ -155,9 +155,9 @@ exports.verifyOtp = async (req, res) => {
           name: user.name,
           email: user.email,
           phoneNumber: user.phoneNumber,
-          location: user.location,
+          state: user.state,
           occupation: user.occupation,
-          occupationDetail: user.occupationDetail,
+          tradingExperience: user.tradingExperience,
           gender: user.gender,
           isPremium: user.isPremium,
           premiumExpiresAt: user.premiumExpiresAt,
@@ -240,11 +240,11 @@ exports.verifyOtpOnly = async (req, res) => {
 };
 
 exports.syncUser = async (req, res) => {
-  const { name, phoneNumber, location, occupation, occupationDetail, gender } = req.body;
+  const { name, phoneNumber, state, occupation, tradingExperience, gender } = req.body;
   const { uid, email } = req.user;
 
   console.log(`[log] syncUser → uid: ${uid}, email: ${email}`);
-  console.log(`[log] syncUser → body: ${JSON.stringify({ name, phoneNumber, location, occupation, occupationDetail, gender })}`);
+  console.log(`[log] syncUser → body: ${JSON.stringify({ name, phoneNumber, state, occupation, tradingExperience, gender })}`);
 
   if (!email) {
     console.log(`[log] syncUser ✗ Email missing from token`);
@@ -257,8 +257,8 @@ exports.syncUser = async (req, res) => {
 
     if (!user) {
       // If it's a new signup, validate that all required fields are present
-      if (!name || !phoneNumber || !location) {
-        return res.status(400).json({ message: 'Name, phone number, and location are required for new registration' });
+      if (!name || !phoneNumber || !state) {
+        return res.status(400).json({ message: 'Name, phone number, and state are required for new registration' });
       }
 
       // Check if phone number is already registered to another user
@@ -272,9 +272,9 @@ exports.syncUser = async (req, res) => {
         name,
         email,
         phoneNumber,
-        location,
+        state,
         occupation: occupation || null,
-        occupationDetail: occupationDetail || null,
+        tradingExperience: tradingExperience || null,
         gender: gender || null,
         isPremium: false,
         isSOB_alert_premium: false,
@@ -302,7 +302,7 @@ exports.syncUser = async (req, res) => {
         }
         updateData.phoneNumber = phoneNumber;
       }
-      if (location) updateData.location = location;
+      if (state) updateData.state = state;
 
       if (Object.keys(updateData).length > 0) {
         user = await User.findOneAndUpdate(
@@ -367,9 +367,9 @@ exports.syncUser = async (req, res) => {
         name: user.name,
         email: user.email,
         phoneNumber: user.phoneNumber,
-        location: user.location,
+        state: user.state,
         occupation: user.occupation,
-        occupationDetail: user.occupationDetail,
+        tradingExperience: user.tradingExperience,
         gender: user.gender,
         isPremium: user.isPremium,
         premiumExpiresAt: user.premiumExpiresAt,

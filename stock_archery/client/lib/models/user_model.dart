@@ -3,11 +3,11 @@ class UserModel {
   final String name;
   final String email;
   final String phoneNumber;
-  final String location;
+  final String state;
   final bool isPremium;
   final DateTime? premiumExpiresAt;
   final String? occupation;
-  final String? occupationDetail;
+  final String? tradingExperience;
   final String? gender;
 
   // Alert access fields
@@ -24,11 +24,11 @@ class UserModel {
     required this.name,
     required this.email,
     required this.phoneNumber,
-    required this.location,
+    required this.state,
     required this.isPremium,
     this.premiumExpiresAt,
     this.occupation,
-    this.occupationDetail,
+    this.tradingExperience,
     this.gender,
     this.isSOBAlertPremium = false,
     this.sobAlertExpiresAt,
@@ -46,13 +46,13 @@ class UserModel {
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       phoneNumber: json['phoneNumber'] ?? '',
-      location: json['location'] ?? '',
+      state: json['state'] ?? '',
       isPremium: json['isPremium'] ?? false,
       premiumExpiresAt: json['premiumExpiresAt'] != null
           ? DateTime.tryParse(json['premiumExpiresAt'])
           : null,
       occupation: json['occupation'],
-      occupationDetail: json['occupationDetail'],
+      tradingExperience: json['tradingExperience'],
       gender: json['gender'],
       isSOBAlertPremium: alerts['isSOB_alert_premium'] ?? false,
       sobAlertExpiresAt: alerts['SOB_alert_expiresAt'] != null
@@ -76,11 +76,11 @@ class UserModel {
       'name': name,
       'email': email,
       'phoneNumber': phoneNumber,
-      'location': location,
+      'state': state,
       'isPremium': isPremium,
       'premiumExpiresAt': premiumExpiresAt?.toIso8601String(),
       'occupation': occupation,
-      'occupationDetail': occupationDetail,
+      'tradingExperience': tradingExperience,
       'gender': gender,
       'isSOB_alert_premium': isSOBAlertPremium,
       'SOB_alert_expiresAt': sobAlertExpiresAt?.toIso8601String(),
@@ -97,11 +97,11 @@ class UserModel {
     String? name,
     String? email,
     String? phoneNumber,
-    String? location,
+    String? state,
     bool? isPremium,
     DateTime? premiumExpiresAt,
     String? occupation,
-    String? occupationDetail,
+    String? tradingExperience,
     String? gender,
     bool? isSOBAlertPremium,
     DateTime? sobAlertExpiresAt,
@@ -116,11 +116,11 @@ class UserModel {
       name: name ?? this.name,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
-      location: location ?? this.location,
+      state: state ?? this.state,
       isPremium: isPremium ?? this.isPremium,
       premiumExpiresAt: premiumExpiresAt ?? this.premiumExpiresAt,
       occupation: occupation ?? this.occupation,
-      occupationDetail: occupationDetail ?? this.occupationDetail,
+      tradingExperience: tradingExperience ?? this.tradingExperience,
       gender: gender ?? this.gender,
       isSOBAlertPremium: isSOBAlertPremium ?? this.isSOBAlertPremium,
       sobAlertExpiresAt: sobAlertExpiresAt ?? this.sobAlertExpiresAt,

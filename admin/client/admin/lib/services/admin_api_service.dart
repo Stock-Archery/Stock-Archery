@@ -24,7 +24,7 @@ class AdminApiService {
     throw Exception('Failed to load alerts');
   }
 
-  Future<AlertPost> createAlert(String category, String text, String imageBase64) async {
+  Future<AlertPost> createAlert(String category, String text, String? imageBase64) async {
     print('[log] POST $_baseUrl/alerts — category: $category, text: ${text.substring(0, text.length > 50 ? 50 : text.length)}...');
     final response = await http.post(
       Uri.parse('$_baseUrl/alerts'),
@@ -32,7 +32,7 @@ class AdminApiService {
       body: jsonEncode({
         'category': category,
         'text': text,
-        'imageBase64': imageBase64,
+        if (imageBase64 != null) 'imageBase64': imageBase64,
       }),
     );
 

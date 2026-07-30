@@ -250,10 +250,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
     required String name,
     required String email,
     required String phoneNumber,
-    required String location,
+    required String userState,
     required String password,
     String? occupation,
-    String? occupationDetail,
+    String? tradingExperience,
     String? gender,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -263,10 +263,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
         name: name,
         email: email,
         phoneNumber: phoneNumber,
-        location: location,
+        state: userState,
         password: password,
         occupation: occupation,
-        occupationDetail: occupationDetail,
+        tradingExperience: tradingExperience,
         gender: gender,
       );
 
