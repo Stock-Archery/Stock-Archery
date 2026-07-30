@@ -43,7 +43,7 @@ const PORT = process.env.PORT || 5000;
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ status: "ok", message: "Stock Archery Main Server" });
+  res.json({ status: "ok", message: "Stock Archery Main Server", version: "1.0.1" });
 });
 
 // Mount routers
