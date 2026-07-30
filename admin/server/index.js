@@ -5,6 +5,9 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import alertRoutes from "./routes/alertRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import broadcastRoutes from "./routes/broadcastRoutes.js";
+import { initFirebase } from "./config/firebase.js";
 
 dotenv.config();
 
@@ -14,19 +17,33 @@ app.use(express.json({ limit: '50mb' }));
 
 const PORT = process.env.PORT || 3000;
 
+// Initialize Firebase Admin SDK
+initFirebase();
+
 // Mount routes
 app.use("/alerts", alertRoutes);
+app.use("/users", userRoutes);
+app.use("/broadcast", broadcastRoutes);
+
+const startedAt = new Date().toISOString();
 
 app.get("/", (req, res) => {
-    res.json({ status: "ok", message: "Stock Archery Server is running" });
+    res.json({
+        status: "ok",
+        message: "Stock Archery Admin Server is running",
+        version: "1.0.0",
+        startedAt,
+        uptime: Math.floor(process.uptime()) + "s",
+    });
 });
 const MONGO_URI = process.env.mongoUri;
 const DATA_URL = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz";
 
 // Connect to MongoDB
+console.log("[log] Connecting to MongoDB...");
 mongoose.connect(MONGO_URI)
-    .then(() => console.log("Connected to MongoDB Atlas"))
-    .catch(err => console.error("MongoDB connection error:", err));
+    .then(() => console.log("[log] Connected to MongoDB Atlas"))
+    .catch(err => console.error("[log] MongoDB connection error:", err));
 
 // Define Schema for F&O Stocks
 const fnoStockSchema = new mongoose.Schema({
@@ -83,7 +100,7 @@ async function fetchAndStoreFNOData() {
 }
 
 // ⚡ Initial load
-fetchAndStoreFNOData().catch(err => console.error("Initial fetch failed:", err));
+// fetchAndStoreFNOData().catch(err => console.error("Initial fetch failed:", err));
 
 
 // 📡 GET current cached list (or from DB)
@@ -122,5 +139,6 @@ app.post("/refresh-fno", async (req, res) => {
 
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`[log] Server running on http://localhost:${PORT}`);
+    console.log(`[log] Routes: /alerts, /users, /broadcast`);
 });

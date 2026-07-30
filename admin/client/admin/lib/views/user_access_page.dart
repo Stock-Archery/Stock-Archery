@@ -29,7 +29,7 @@ class _UserAccessPageState extends State<UserAccessPage> {
     super.dispose();
   }
 
-  // Perform search for user by email or phone number in MongoDB
+  // Perform search for user by email or phone number
   Future<void> _performSearch() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) {
@@ -42,6 +42,7 @@ class _UserAccessPageState extends State<UserAccessPage> {
       return;
     }
 
+    print('[log] UserAccessPage — searching user: "$query"');
     setState(() {
       _isSearching = true;
       _foundUser = null;
@@ -51,6 +52,7 @@ class _UserAccessPageState extends State<UserAccessPage> {
     try {
       final user = await _mongoService.searchUser(query);
       if (user != null) {
+        print('[log] UserAccessPage — user found: ${user['email']}');
         setState(() {
           _foundUser = user;
           _isSOB = user['isSOB_alert_premium'] ?? false;
@@ -58,12 +60,13 @@ class _UserAccessPageState extends State<UserAccessPage> {
           _isCrypto = user['isCrypto_alert_premium'] ?? false;
         });
       } else {
+        print('[log] UserAccessPage — user not found for "$query"');
         setState(() {
           _foundUser = null;
         });
       }
     } catch (e) {
-      print("Search failed: $e");
+      print('[log] UserAccessPage — search error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -79,7 +82,7 @@ class _UserAccessPageState extends State<UserAccessPage> {
     }
   }
 
-  // Save the updated subscription settings via Node.js API call
+  // Save the updated subscription settings via admin server API
   Future<void> _saveAccess() async {
     if (_foundUser == null) return;
 
@@ -94,8 +97,10 @@ class _UserAccessPageState extends State<UserAccessPage> {
       'isCrypto_alert_premium': _isCrypto,
     };
 
+    print('[log] UserAccessPage — saving alert access for uid: $firebaseUid, updates: $updates');
     try {
       final success = await _mongoService.updateUserAlertAccess(firebaseUid, updates);
+      print('[log] UserAccessPage — save result: $success');
       if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
