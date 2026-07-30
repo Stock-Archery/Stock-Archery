@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import alertRoutes from "./routes/alertRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ const PORT = process.env.PORT || 3000;
 
 // Mount routes
 app.use("/alerts", alertRoutes);
+app.use("/users", userRoutes);
 
 app.get("/", (req, res) => {
     res.json({ status: "ok", message: "Stock Archery Server is running" });
@@ -83,7 +85,7 @@ async function fetchAndStoreFNOData() {
 }
 
 // ⚡ Initial load
-fetchAndStoreFNOData().catch(err => console.error("Initial fetch failed:", err));
+// fetchAndStoreFNOData().catch(err => console.error("Initial fetch failed:", err));
 
 
 // 📡 GET current cached list (or from DB)

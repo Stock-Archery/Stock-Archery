@@ -1,15 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/alert_post.dart';
+import 'app_config.dart';
 
 class AdminApiService {
   static final AdminApiService _instance = AdminApiService._internal();
   factory AdminApiService() => _instance;
   AdminApiService._internal();
 
-  // String get _baseUrl => dotenv.get('SERVER_URL', fallback: 'http://localhost:3000');
-  String get _baseUrl => dotenv.get('SERVER_URLL', fallback: 'http://172.24.224.1:3000');
+  String get _baseUrl => AppConfig.baseUrl;
 
   Future<List<AlertPost>> getAlerts(String category) async {
     final response = await http.get(Uri.parse('$_baseUrl/alerts/$category'));

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'stock_selection_page.dart';
+// import 'stock_selection_page.dart';
 import 'alert_send_page.dart';
 import 'user_access_page.dart';
 
@@ -42,24 +42,24 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 30),
-            _buildActionTile(
-              context,
-              title: "Change 5 stocks recommendation",
-              subtitle: "Update the featured stocks for the main app",
-              icon: Icons.trending_up_rounded,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const StockSelectionPage()),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
+            // _buildActionTile(
+            //   context,
+            //   title: "Change 5 stocks recommendation",
+            //   subtitle: "Update the featured stocks for the main app",
+            //   icon: Icons.trending_up_rounded,
+            //   gradient: const LinearGradient(
+            //     colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
+            //     begin: Alignment.topLeft,
+            //     end: Alignment.bottomRight,
+            //   ),
+            //   onTap: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => const StockSelectionPage()),
+            //     );
+            //   },
+            // ),
+            // const SizedBox(height: 16),
             _buildActionTile(
               context,
               title: "Send Alert",
