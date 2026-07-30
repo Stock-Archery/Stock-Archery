@@ -172,10 +172,10 @@ class AuthService {
     required String name,
     required String email,
     required String phoneNumber,
-    required String location,
+    required String state,
     required String password,
     String? occupation,
-    String? occupationDetail,
+    String? tradingExperience,
     String? gender,
   }) async {
     if (isFirebaseAvailable) {
@@ -201,9 +201,9 @@ class AuthService {
         body: jsonEncode({
           'name': name,
           'phoneNumber': phoneNumber,
-          'location': location,
+          'state': state,
           'occupation': occupation,
-          'occupationDetail': occupationDetail,
+          'tradingExperience': tradingExperience,
           'gender': gender,
         }),
       );
@@ -234,9 +234,9 @@ class AuthService {
         body: jsonEncode({
           'name': name,
           'phoneNumber': phoneNumber,
-          'location': location,
+          'state': state,
           'occupation': occupation,
-          'occupationDetail': occupationDetail,
+          'tradingExperience': tradingExperience,
           'gender': gender,
         }),
       );
@@ -304,7 +304,7 @@ class AuthService {
         body: jsonEncode({
           'name': email.split('@')[0].toUpperCase(),
           'phoneNumber': '0000000000',
-          'location': 'Mock Location',
+          'state': 'Mock State',
         }),
       );
 

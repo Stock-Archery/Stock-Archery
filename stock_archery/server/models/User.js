@@ -25,19 +25,19 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
-  location: {
+  state: {
     type: String,
     required: true,
     trim: true
   },
   occupation: {
     type: String,
-    enum: ['student', 'businessman', 'others'],
+    enum: ['student', 'business', 'self_employed', 'government_job', 'private_sector_job'],
     default: null
   },
-  occupationDetail: {
+  tradingExperience: {
     type: String,
-    trim: true,
+    enum: ['beginner', 'intermediate', 'experienced'],
     default: null
   },
   gender: {
