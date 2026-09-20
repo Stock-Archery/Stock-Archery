@@ -201,14 +201,14 @@ class _BrokersViewState extends State<BrokersView> {
                   color: const Color(0xFF10B981),
                   isPopular: false,
                   isWide: false,
-                  onTap: () => _showComingSoon(context, "Mudrex"),
+                  onTap: () =>
+                      _launchUrl("https://mudrex.com/?referral_code=P5E1RM42"),
                 ),
               ] else if (_selectedCategory == 'XAUD') ...[
                 _buildBrokerCard(
                   name: "Angel One",
                   logoAsset: "assets/logos/angelone.png",
-                  description:
-                      "Intelligent trading with ARQ Prime advisory.",
+                  description: "Intelligent trading with ARQ Prime advisory.",
                   color: const Color(0xFF3B82F6),
                   isPopular: false,
                   isWide: true,
@@ -217,8 +217,7 @@ class _BrokersViewState extends State<BrokersView> {
                 _buildBrokerCard(
                   name: "Dhan",
                   logoAsset: "assets/logos/dhan.jpeg",
-                  description:
-                      "Lighting fast trading experience for pros.",
+                  description: "Lighting fast trading experience for pros.",
                   color: const Color(0xFF22C55E),
                   isPopular: false,
                   isWide: false,
@@ -227,8 +226,7 @@ class _BrokersViewState extends State<BrokersView> {
                 _buildBrokerCard(
                   name: "Upstox",
                   logoAsset: "assets/logos/upstox.jpeg",
-                  description:
-                      "Reliable platform with advanced analytics.",
+                  description: "Reliable platform with advanced analytics.",
                   color: const Color(0xFF9333EA),
                   isPopular: false,
                   isWide: false,
