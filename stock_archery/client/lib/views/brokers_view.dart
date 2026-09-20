@@ -12,6 +12,7 @@ class BrokersView extends StatefulWidget {
 
 class _BrokersViewState extends State<BrokersView> {
   final ScrollController _scrollController = ScrollController();
+  String _selectedCategory = 'SOB';
 
   @override
   void dispose() {
@@ -113,61 +114,127 @@ class _BrokersViewState extends State<BrokersView> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
-              // Broker Cards
-              _buildBrokerCard(
-                name: "Fyers",
-                logoAsset: "assets/logos/fyers.jpeg",
-                description:
-                    "Focus on long-term investing with zero brokerage.",
-                color: const Color(0xFF2563EB),
-                isPopular: true,
-                isWide: false,
-                onTap: () => _launchUrl(
-                  "https://signup.fyers.in/?utm-source=AP-Leads&utm-medium=AP3324",
+              // Category Tabs (SOB, Crypto, XAUD)
+              Row(
+                children: ['SOB', 'Crypto', 'XAUD'].map((category) {
+                  final isSelected = _selectedCategory == category;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedCategory = category;
+                        });
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.goldBright
+                              : AppColors.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(AppRadii.base),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.goldBright
+                                : AppColors.outlineVariant,
+                            width: 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            category,
+                            style: GoogleFonts.inter(
+                              color: isSelected
+                                  ? AppColors.pureBlack
+                                  : AppColors.onSurfaceVariant,
+                              fontSize: 13,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+
+              // Broker Cards Filtered by Selected Category
+              if (_selectedCategory == 'SOB') ...[
+                _buildBrokerCard(
+                  name: "Fyers",
+                  logoAsset: "assets/logos/fyers.jpeg",
+                  description:
+                      "Focus on long-term investing with zero brokerage.",
+                  color: const Color(0xFF2563EB),
+                  isPopular: true,
+                  isWide: false,
+                  onTap: () => _launchUrl(
+                    "https://signup.fyers.in/?utm-source=AP-Leads&utm-medium=AP3324",
+                  ),
+                  onVerifyTap: () =>
+                      _launchUrl("https://forms.gle/M9pksV9eWH2sjqPB6"),
                 ),
-                onVerifyTap: () =>
-                    _launchUrl("https://forms.gle/M9pksV9eWH2sjqPB6"),
-              ),
-              _buildBrokerCard(
-                name: "CoinDCX",
-                logoAsset: "assets/logos/coindcx.png",
-                description: "India's safest crypto exchange with 500+ assets.",
-                color: const Color(0xFFF97316),
-                isPopular: false,
-                isWide: true,
-                onTap: () => _launchUrl("https://invite.coindcx.com/46915912"),
-                onVerifyTap: () =>
-                    _launchUrl("https://forms.gle/idJxF6auWfS7Yiy69"),
-              ),
-              _buildBrokerCard(
-                name: "Angel One",
-                logoAsset: "assets/logos/angelone.png",
-                description: "Intelligent trading with ARQ Prime advisory.",
-                color: const Color(0xFF3B82F6),
-                isPopular: false,
-                isWide: true,
-                onTap: () => _showComingSoon(context, "Angel One"),
-              ),
-              _buildBrokerCard(
-                name: "Dhan",
-                logoAsset: "assets/logos/dhan.jpeg",
-                description: "Lighting fast trading experience for pros.",
-                color: const Color(0xFF22C55E),
-                isPopular: false,
-                isWide: false,
-                onTap: () => _showComingSoon(context, "Dhan"),
-              ),
-              _buildBrokerCard(
-                name: "Upstox",
-                logoAsset: "assets/logos/upstox.jpeg",
-                description: "Reliable platform with advanced analytics.",
-                color: const Color(0xFF9333EA),
-                isPopular: false,
-                isWide: false,
-                onTap: () => _showComingSoon(context, "Upstox"),
-              ),
+              ] else if (_selectedCategory == 'Crypto') ...[
+                _buildBrokerCard(
+                  name: "CoinDCX",
+                  logoAsset: "assets/logos/coindcx.png",
+                  description:
+                      "India's safest crypto exchange with 500+ assets.",
+                  color: const Color(0xFFF97316),
+                  isPopular: false,
+                  isWide: true,
+                  onTap: () =>
+                      _launchUrl("https://invite.coindcx.com/46915912"),
+                  onVerifyTap: () =>
+                      _launchUrl("https://forms.gle/idJxF6auWfS7Yiy69"),
+                ),
+                _buildBrokerCard(
+                  name: "Mudrex",
+                  logoAsset: "assets/logos/mudrex.png",
+                  description:
+                      "Automated crypto investing & basket portfolios.",
+                  color: const Color(0xFF10B981),
+                  isPopular: false,
+                  isWide: false,
+                  onTap: () => _showComingSoon(context, "Mudrex"),
+                ),
+              ] else if (_selectedCategory == 'XAUD') ...[
+                _buildBrokerCard(
+                  name: "Angel One",
+                  logoAsset: "assets/logos/angelone.png",
+                  description:
+                      "Intelligent trading with ARQ Prime advisory.",
+                  color: const Color(0xFF3B82F6),
+                  isPopular: false,
+                  isWide: true,
+                  onTap: () => _showComingSoon(context, "Angel One"),
+                ),
+                _buildBrokerCard(
+                  name: "Dhan",
+                  logoAsset: "assets/logos/dhan.jpeg",
+                  description:
+                      "Lighting fast trading experience for pros.",
+                  color: const Color(0xFF22C55E),
+                  isPopular: false,
+                  isWide: false,
+                  onTap: () => _showComingSoon(context, "Dhan"),
+                ),
+                _buildBrokerCard(
+                  name: "Upstox",
+                  logoAsset: "assets/logos/upstox.jpeg",
+                  description:
+                      "Reliable platform with advanced analytics.",
+                  color: const Color(0xFF9333EA),
+                  isPopular: false,
+                  isWide: false,
+                  onTap: () => _showComingSoon(context, "Upstox"),
+                ),
+              ],
 
               const SizedBox(height: 24),
 
