@@ -276,7 +276,7 @@ class SubscriptionView extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
               const _PremiumFeatureCard(
                 icon: Icons.smart_toy_outlined,
-                title: 'Live AI Trading Bot',
+                title: 'Trade Genie',
                 description:
                     'Get instant AI-powered answers to your stock market questions.',
               ),
@@ -291,12 +291,6 @@ class SubscriptionView extends ConsumerWidget {
                 title: 'Top Influencer Stocks',
                 description:
                     'Track trending investments and portfolios from top creators.',
-              ),
-              const _PremiumFeatureCard(
-                icon: Icons.show_chart_rounded,
-                title: 'AI Buy/Sell Signals',
-                description:
-                    'Receive smart stock alerts and AI-generated trading opportunities.',
               ),
               const _PremiumFeatureCard(
                 icon: Icons.account_balance_wallet_outlined,

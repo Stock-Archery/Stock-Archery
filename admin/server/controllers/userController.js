@@ -60,6 +60,9 @@ export const updateUserAlertAccess = async (req, res) => {
       user.Crypto_alert_expiresAt = isCrypto_alert_premium ? new Date(now.getTime() + oneYear) : null;
     }
 
+    // Schemas are aligned with the main app (same `users` collection), so
+    // full-document validation applies. If this ever fails again, the
+    // `error` field in the 500 response names the offending field.
     await user.save();
     console.log(`[log] PUT /users/alert-access/${firebaseUid} — 200: updated successfully`);
 
@@ -70,6 +73,6 @@ export const updateUserAlertAccess = async (req, res) => {
     });
   } catch (err) {
     console.error(`[log] PUT /users/alert-access/${firebaseUid} — 500:`, err.message);
-    res.status(500).json({ status: "error", message: "Failed to update alert access" });
+    res.status(500).json({ status: "error", message: "Failed to update alert access", error: err.message });
   }
 };

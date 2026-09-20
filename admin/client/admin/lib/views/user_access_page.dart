@@ -308,7 +308,10 @@ class _UserAccessPageState extends State<UserAccessPage> {
                       // User Metadata
                       _buildDetailRow('Phone Number', _foundUser!['phoneNumber'] ?? '-'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Location', _foundUser!['location'] ?? '-'),
+                      _buildDetailRow(
+                        'State',
+                        (_foundUser!['state'] ?? _foundUser!['location'])?.toString() ?? '-',
+                      ),
                       const SizedBox(height: 12),
                       _buildDetailRow('Firebase UID', _foundUser!['firebaseUid'] ?? '-'),
                       

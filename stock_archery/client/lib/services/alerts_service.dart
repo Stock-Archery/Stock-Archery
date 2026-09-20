@@ -15,7 +15,13 @@ class AlertsService {
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      return data.map((a) => AlertPost.fromJson(a)).toList();
+      final cutoff = DateTime.now().subtract(const Duration(days: 7));
+      // Safety net: server already filters to last 7 days, but drop any
+      // stale items that slip through (clock skew / cached responses).
+      return data
+          .map((a) => AlertPost.fromJson(a))
+          .where((a) => !a.createdAt.isBefore(cutoff))
+          .toList();
     }
     throw Exception('Failed to load alerts');
   }

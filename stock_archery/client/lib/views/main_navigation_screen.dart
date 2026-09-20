@@ -186,7 +186,7 @@ class MainNavigationScreen extends ConsumerWidget {
                 padding: EdgeInsets.only(bottom: 3),
                 child: Icon(Icons.smart_toy, size: 24),
               ),
-              label: 'AI Bot',
+              label: 'Genie',
             ),
             BottomNavigationBarItem(
               icon: Padding(

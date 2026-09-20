@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/alert_post.dart';
 import '../services/admin_api_service.dart';
+import '../services/image_crop_service.dart';
 
 class AlertViewModel extends ChangeNotifier {
   final AdminApiService _apiService = AdminApiService();
+  final ImageCropService _cropService = const ImageCropService();
   final ImagePicker _picker = ImagePicker();
 
   String _selectedCategory = 'SOB';
@@ -39,25 +41,58 @@ class AlertViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> pickImage() async {
+  Future<void> pickImage({BuildContext? context}) async {
     final XFile? image = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 100,
     );
     if (image != null) {
-      _pickedImage = File(image.path);
-      notifyListeners();
+      // Page stays mounted during pick/crop; context is only used for WebUiSettings.
+      // ignore: use_build_context_synchronously
+      await _setPickedWithCrop(File(image.path), context: context);
     }
   }
 
-  Future<void> pickImageFromCamera() async {
+  Future<void> pickImageFromCamera({BuildContext? context}) async {
     final XFile? image = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 100,
     );
     if (image != null) {
-      _pickedImage = File(image.path);
-      notifyListeners();
+      // Page stays mounted during pick/crop; context is only used for WebUiSettings.
+      // ignore: use_build_context_synchronously
+      await _setPickedWithCrop(File(image.path), context: context);
+    }
+  }
+
+  /// Opens the crop screen for an already-picked [source] file.
+  /// Keeps the original when the user cancels cropping.
+  Future<void> _setPickedWithCrop(File source, {BuildContext? context}) async {
+    _pickedImage = source;
+    notifyListeners();
+    try {
+      final cropped = await _cropService.cropImage(source, context: context);
+      if (cropped != null) {
+        _pickedImage = cropped;
+        notifyListeners();
+      }
+    } catch (e) {
+      print('[log] AlertViewModel — crop error (keeping original): $e');
+    }
+  }
+
+  /// Re-opens the crop screen for the current image (edit button on preview).
+  Future<void> recropImage({BuildContext? context}) async {
+    final current = _pickedImage;
+    if (current == null) return;
+    try {
+      final cropped = await _cropService.cropImage(current, context: context);
+      if (cropped != null) {
+        _pickedImage = cropped;
+        notifyListeners();
+      }
+    } catch (e) {
+      print('[log] AlertViewModel — recrop error: $e');
     }
   }
 
