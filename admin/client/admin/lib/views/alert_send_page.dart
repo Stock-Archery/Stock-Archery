@@ -152,6 +152,27 @@ class _AlertSendPageState extends State<AlertSendPage> {
                                 ),
                                 Positioned(
                                   top: 8,
+                                  left: 8,
+                                  child: GestureDetector(
+                                    onTap: () => viewModel.recropImage(
+                                      context: context,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.crop_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 8,
                                   right: 8,
                                   child: GestureDetector(
                                     onTap: () => viewModel.clearImage(),
@@ -186,6 +207,14 @@ class _AlertSendPageState extends State<AlertSendPage> {
                                 style: GoogleFonts.outfit(
                                   color: Colors.white38,
                                   fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'You can crop it before sending',
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white24,
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -471,7 +500,7 @@ class _AlertSendPageState extends State<AlertSendPage> {
                 title: Text('Gallery', style: GoogleFonts.outfit(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  viewModel.pickImage();
+                  viewModel.pickImage(context: context);
                 },
               ),
               ListTile(
@@ -479,7 +508,7 @@ class _AlertSendPageState extends State<AlertSendPage> {
                 title: Text('Camera', style: GoogleFonts.outfit(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  viewModel.pickImageFromCamera();
+                  viewModel.pickImageFromCamera(context: context);
                 },
               ),
             ],
