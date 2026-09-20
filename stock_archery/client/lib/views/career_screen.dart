@@ -1,10 +1,19 @@
-// Offline Trading Class — vertical scroll version
-//
-// Single self-contained Flutter file.
-
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() => runApp(const TradingClassApp());
+
+// ----------------------------------------------------------------------
+// External links — replace with your real URLs
+// ----------------------------------------------------------------------
+
+class AppLinks {
+  static const String googleMapsUrl =
+      'https://www.google.com/maps?client=ms-android-motorola-rvo3&hs=JXfq&sca_esv=de9039c1853f1b8f&hl=en-IN&cs=1&sxsrf=APpeQnvN8Pj2-yS-zFp7aL8Y9uCw6ZQSiw:1789928664884&kgmid=/g/11pf1vn1wy&shem=epsd1,ltae,rimspwouoe&shndl=30&kgs=29f668bc24c05ac9&um=1&ie=UTF-8&fb=1&gl=in&sa=X&geocode=KY18R0OuN_A5MdpkFrqYZIuj&daddr=Manik+sarkar+chowk,+near+Babulal+sweets,+bgp,+Adampur,+Bhagalpur,+Shanker+Pur,+Bihar+812001';
+
+  static const String registrationFormUrl =
+      'https://docs.google.com/forms/d/e/1FAIpQLSeHZjDCy0DveuYNpJ1sSIYDs8eB-NLN6GLDI8OL5sR2-dygTw/viewform';
+}
 
 class TradingClassApp extends StatelessWidget {
   const TradingClassApp({super.key});
@@ -40,6 +49,20 @@ class AppColors {
   static const textMuted = Color(0xFF9AA3B8);
   static const green = Color(0xFF3FCF8E);
   static const red = Color(0xFFEF5A5A);
+}
+
+// ----------------------------------------------------------------------
+// Helper: open an external URL safely
+// ----------------------------------------------------------------------
+
+Future<void> _openUrl(BuildContext context, String urlString) async {
+  final uri = Uri.parse(urlString);
+  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!launched && context.mounted) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Could not open the link.')));
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -150,7 +173,15 @@ class _Heading extends StatelessWidget {
 
 class _Card extends StatelessWidget {
   final Widget child;
-  const _Card({required this.child});
+  final Color? backgroundColor;
+  final Color? borderColor;
+  final double borderWidth;
+  const _Card({
+    required this.child,
+    this.backgroundColor,
+    this.borderColor,
+    this.borderWidth = 1,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -158,9 +189,12 @@ class _Card extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: backgroundColor ?? AppColors.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(
+          color: borderColor ?? AppColors.cardBorder,
+          width: borderWidth,
+        ),
       ),
       child: child,
     );
@@ -265,17 +299,14 @@ class _OutlineButton extends StatelessWidget {
 class _HeroSection extends StatelessWidget {
   final VoidCallback onRoadmapTap;
   final VoidCallback onFormTap;
-  const _HeroSection({
-    required this.onRoadmapTap,
-    required this.onFormTap,
-  });
+  const _HeroSection({required this.onRoadmapTap, required this.onFormTap});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _PillBadge('Offline Class · Bhagalpur, Bihar'),
+        const _PillBadge('Offline Programme · Bhagalpur, Bihar'),
         const SizedBox(height: 24),
         RichText(
           text: const TextSpan(
@@ -287,7 +318,7 @@ class _HeroSection extends StatelessWidget {
               fontFamily: 'serif',
             ),
             children: [
-              TextSpan(text: 'Bihar ki sabse badi '),
+              TextSpan(text: 'Join Bihar\'s Premier '),
               TextSpan(
                 text: 'Trading Floor',
                 style: TextStyle(
@@ -295,14 +326,15 @@ class _HeroSection extends StatelessWidget {
                   fontStyle: FontStyle.italic,
                 ),
               ),
-              TextSpan(text: ' join karo'),
+              TextSpan(text: ' Experience'),
             ],
           ),
         ),
         const SizedBox(height: 16),
         const Text(
-          '25-din ka offline bootcamp — seekho, practice karo aur asli '
-          'trading floor ke mahaul mein khud ko test karo.',
+          'A 25-day offline bootcamp designed to build practical trading '
+          'skills through structured learning, hands-on practice, and a '
+          'real trading floor environment.',
           style: TextStyle(
             color: AppColors.textMuted,
             fontSize: 15,
@@ -312,9 +344,9 @@ class _HeroSection extends StatelessWidget {
         const SizedBox(height: 28),
         const _CandleChart(),
         const SizedBox(height: 28),
-        _GoldButton(text: 'Seat book karo', onTap: onFormTap),
+        _GoldButton(text: 'Reserve Your Seat', onTap: onFormTap),
         const SizedBox(height: 12),
-        _OutlineButton(text: 'Roadmap dekho', onTap: onRoadmapTap),
+        _OutlineButton(text: 'View Roadmap', onTap: onRoadmapTap),
       ],
     );
   }
@@ -410,11 +442,18 @@ class _RoadmapSection extends StatelessWidget {
   static const List<_WeekData> weeks = [
     _WeekData(
       'Week 1',
-      'Foundation phase — trading floor ka mahaul, basics ki shuruaat.',
+      'Foundation phase — an introduction to the trading floor environment '
+          'and core fundamentals.',
     ),
-    _WeekData('Week 2', 'Concepts ko practice ke saath deepen karna.'),
-    _WeekData('Week 3', 'Live floor practice aur strategy building.'),
-    _WeekData('Week 4', 'Final assessment ki taiyari aur test conduction.'),
+    _WeekData(
+      'Week 2',
+      'Deepening core concepts through guided, hands-on practice.',
+    ),
+    _WeekData(
+      'Week 3',
+      'Live trading floor practice and strategy development.',
+    ),
+    _WeekData('Week 4', 'Final preparation and conduction of the assessment.'),
   ];
 
   @override
@@ -424,11 +463,11 @@ class _RoadmapSection extends StatelessWidget {
       children: [
         const _SectionLabel('Roadmap'),
         const SizedBox(height: 8),
-        const _Heading('25 Days Offline Bootcamp'),
+        const _Heading('25-Day Offline Bootcamp'),
         const SizedBox(height: 10),
         const Text(
-          'Poora program 4 weeks mein baata gaya hai. Har week ka '
-          'structure jald hi reveal hoga.',
+          'The programme is structured across four weeks. Detailed '
+          'week-by-week curriculum will be announced shortly.',
           style: TextStyle(
             color: AppColors.textMuted,
             fontSize: 15,
@@ -514,7 +553,7 @@ class _TimelineItem extends StatelessWidget {
                       border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: const Text(
-                      'Details jald aa rahe hain',
+                      'Detailed schedule coming soon',
                       style: TextStyle(
                         color: AppColors.textMuted,
                         fontSize: 12,
@@ -545,7 +584,7 @@ class _ScheduleFeeVenueSection extends StatelessWidget {
       children: [
         const _SectionLabel('Schedule & Fee'),
         const SizedBox(height: 8),
-        const _Heading('Class timing aur investment'),
+        const _Heading('Class Timings and Investment'),
         const SizedBox(height: 24),
         _Card(
           child: Column(
@@ -556,41 +595,56 @@ class _ScheduleFeeVenueSection extends StatelessWidget {
                 style: TextStyle(color: AppColors.textMuted, fontSize: 14),
               ),
               const SizedBox(height: 18),
-              const _TimingRow(
-                label: 'Morning Session',
-                value: '9:30 – 2:30',
-              ),
+              const _TimingRow(label: 'Morning Session', value: '9:30 – 2:30'),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 14),
                 child: Divider(color: AppColors.cardBorder, height: 1),
               ),
-              const _TimingRow(
-                label: 'Evening Session',
-                value: '4:00 – 7:30',
-              ),
+              const _TimingRow(label: 'Evening Session', value: '3:30 – 5:30'),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        _Card(
+        // Course Fee — highlighted prominently; "One-time payment" kept
+        // as a low-emphasis, muted note underneath.
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.gold.withValues(alpha: 0.16),
+                AppColors.gold.withValues(alpha: 0.04),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.gold, width: 1.4),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Course Fee',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                'COURSE FEE',
+                style: TextStyle(
+                  color: AppColors.goldLight,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               const Text(
                 '₹27,000',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
+                  color: AppColors.gold,
+                  fontSize: 40,
+                  fontWeight: FontWeight.w800,
                   fontFamily: 'serif',
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               const Text(
                 'One-time payment',
                 style: TextStyle(color: AppColors.textMuted, fontSize: 13),
@@ -601,44 +655,62 @@ class _ScheduleFeeVenueSection extends StatelessWidget {
         const SizedBox(height: 32),
         const _SectionLabel('Venue'),
         const SizedBox(height: 8),
-        const _Heading('Kahan hoti hai class'),
+        const _Heading('Where the Class Is Held'),
         const SizedBox(height: 20),
-        _Card(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.location_on_outlined,
-                color: AppColors.gold,
-                size: 26,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Near Stock Archery',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Manik Sarkar Chowk, Beside Dabulal Kachori Wala, '
-                      'Bhagalpur, Bihar – 812001',
-                      style: TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
+        InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _openUrl(context, AppLinks.googleMapsUrl),
+          child: _Card(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.location_on_outlined,
+                  color: AppColors.gold,
+                  size: 26,
                 ),
-              ),
-            ],
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Near Stock Archery',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'Manik Sarkar Chowk, Beside Dabulal Kachori Wala, '
+                        'Bhagalpur, Bihar – 812001',
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Tap to open in Google Maps',
+                        style: TextStyle(
+                          color: AppColors.gold,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.open_in_new,
+                  color: AppColors.textMuted,
+                  size: 18,
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -671,7 +743,7 @@ class _TimingRow extends StatelessWidget {
 }
 
 // ----------------------------------------------------------------------
-// Section 4 — Rewards
+// Section 4 — Rewards / Test Conduction
 // ----------------------------------------------------------------------
 
 class _RewardsSection extends StatelessWidget {
@@ -685,10 +757,12 @@ class _RewardsSection extends StatelessWidget {
       children: [
         const _SectionLabel('Test Conduction'),
         const SizedBox(height: 8),
-        const _Heading('Winners ke liye rewards'),
+        const _Heading('Assessment and Rewards'),
         const SizedBox(height: 10),
         const Text(
-          'Bootcamp ke end mein test hoga aur top performers ko ye milega:',
+          'At the conclusion of the bootcamp, participants will take an '
+          'assessment based entirely on the syllabus covered during the '
+          'programme. Top performers will receive the following rewards:',
           style: TextStyle(
             color: AppColors.textMuted,
             fontSize: 15,
@@ -699,20 +773,20 @@ class _RewardsSection extends StatelessWidget {
         const _RewardRow(
           rank: '1',
           title: '1st Winner',
-          subtitle: '1 year paid internship (remote)',
+          subtitle: 'One-year paid internship ',
           highlighted: true,
         ),
         const SizedBox(height: 14),
         const _RewardRow(
           rank: '2',
           title: '2nd Winner',
-          subtitle: '\$10K funded account',
+          subtitle: '\$10,000 funded trading account',
         ),
         const SizedBox(height: 14),
         const _RewardRow(
           rank: '3',
           title: '3rd Winner',
-          subtitle: '\$5K funded account',
+          subtitle: '\$5,000 funded trading account',
         ),
         const SizedBox(height: 20),
         Container(
@@ -723,24 +797,41 @@ class _RewardsSection extends StatelessWidget {
             border: Border.all(color: AppColors.gold, width: 1.2),
           ),
           child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('🥇', style: TextStyle(fontSize: 22)),
               SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Har participant ko Certificate of Participation milta hai.',
-                  style: TextStyle(
-                    color: AppColors.gold,
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Will every participant receive a certificate?',
+                      style: TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Yes — every participant receives a Certificate of '
+                      'Participation upon completion of the bootcamp.',
+                      style: TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        _OutlineButton(text: 'Form pe jao', onTap: onGetInTouchTap),
+        _OutlineButton(text: 'Proceed to Registration', onTap: onGetInTouchTap),
       ],
     );
   }
@@ -816,235 +907,75 @@ class _RewardRow extends StatelessWidget {
 }
 
 // ----------------------------------------------------------------------
-// Section 5 — Form
+// Section 5 — Registration (Fill Form button linking to a Google Form)
 // ----------------------------------------------------------------------
 
-class _FormSection extends StatefulWidget {
+class _FormSection extends StatelessWidget {
   const _FormSection({super.key});
 
   @override
-  State<_FormSection> createState() => _FormSectionState();
-}
-
-class _FormSectionState extends State<_FormSection> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController();
-  final _placeCtrl = TextEditingController();
-  final _ageCtrl = TextEditingController();
-  final _contactCtrl = TextEditingController();
-  String? _experience;
-
-  static const experiences = [
-    'Beginner',
-    'Kuch mahine',
-    '1+ saal',
-    'Professional',
-  ];
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _placeCtrl.dispose();
-    _ageCtrl.dispose();
-    _contactCtrl.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final valid = _formKey.currentState?.validate() ?? false;
-    if (valid && _experience != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Submit ho gaya! Team jald contact karegi.'),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please fill all fields.')));
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _SectionLabel('Get In Touch'),
-          const SizedBox(height: 8),
-          const _Heading('Apna seat reserve karo'),
-          const SizedBox(height: 10),
-          const Text(
-            'Neeche apni details bharo, hamari team aapse contact karegi.',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 15,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 24),
-          _Card(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const _FieldLabel('Name'),
-                _InputField(controller: _nameCtrl, hint: 'Aapka poora naam'),
-                const SizedBox(height: 20),
-                const _FieldLabel('Place'),
-                _InputField(
-                  controller: _placeCtrl,
-                  hint: 'Aapka sheher / gaon',
-                ),
-                const SizedBox(height: 20),
-                const _FieldLabel('Age'),
-                _InputField(
-                  controller: _ageCtrl,
-                  hint: 'Aapki age',
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 20),
-                const _FieldLabel('Trading Experience'),
-                _ExperienceDropdown(
-                  value: _experience,
-                  items: experiences,
-                  onChanged: (v) => setState(() => _experience = v),
-                ),
-                const SizedBox(height: 20),
-                const _FieldLabel('Contact No.'),
-                _InputField(
-                  controller: _contactCtrl,
-                  hint: '10-digit mobile number',
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 24),
-                _GoldButton(text: 'Submit karo', onTap: _submit),
-                const SizedBox(height: 14),
-                const Text(
-                  'Submit karne ke baad hamari team 24 ghante ke andar call karegi.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 12.5,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Center(
-            child: Text(
-              'Offline Trading Bootcamp · Bhagalpur, Bihar',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12.5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FieldLabel extends StatelessWidget {
-  final String text;
-  const _FieldLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        text,
-        style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-      ),
-    );
-  }
-}
-
-class _InputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final TextInputType? keyboardType;
-  const _InputField({
-    required this.controller,
-    required this.hint,
-    this.keyboardType,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white, fontSize: 15),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.7)),
-        filled: true,
-        fillColor: AppColors.bg,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.cardBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.cardBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.gold),
-        ),
-      ),
-      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-    );
-  }
-}
-
-class _ExperienceDropdown extends StatelessWidget {
-  final String? value;
-  final List<String> items;
-  final ValueChanged<String?> onChanged;
-  const _ExperienceDropdown({
-    required this.value,
-    required this.items,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButtonFormField<String>(
-          value: value,
-          hint: const Text(
-            'Chuniye',
-            style: TextStyle(color: Colors.white, fontSize: 15),
-          ),
-          dropdownColor: AppColors.card,
-          style: const TextStyle(color: Colors.white, fontSize: 15),
-          icon: const Icon(
-            Icons.keyboard_arrow_down,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionLabel('Get In Touch'),
+        const SizedBox(height: 8),
+        const _Heading('Reserve Your Seat'),
+        const SizedBox(height: 10),
+        const Text(
+          'Complete the registration form below and our team will get in '
+          'touch with you within 24 hours.',
+          style: TextStyle(
             color: AppColors.textMuted,
+            fontSize: 15,
+            height: 1.5,
           ),
-          decoration: const InputDecoration(border: InputBorder.none),
-          items: items
-              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-              .toList(),
-          onChanged: onChanged,
-          validator: (v) => v == null ? 'Please select' : null,
         ),
-      ),
+        const SizedBox(height: 24),
+        _Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.description_outlined,
+                color: AppColors.gold,
+                size: 32,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Registration Form',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Please provide your name, location, age, trading '
+                'experience, and contact number to secure your seat.',
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 22),
+              _GoldButton(
+                text: 'Fill Registration Form',
+                onTap: () => _openUrl(context, AppLinks.registrationFormUrl),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        const Center(
+          child: Text(
+            'Offline Trading Bootcamp · Bhagalpur, Bihar',
+            style: TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+          ),
+        ),
+      ],
     );
   }
 }
