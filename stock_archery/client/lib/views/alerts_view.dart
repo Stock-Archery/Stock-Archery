@@ -288,18 +288,21 @@ final Map<String, VideoModel> _categoryIntroVideos = {
     thumbnail: 'https://img.youtube.com/vi/VHg3TFRsUME/0.jpg',
     description:
         'Learn how to use SOB alerts for trading and maximize your profits.',
+    category: "pop-up",
   ),
   'XAUD': VideoModel(
     title: 'About XAUD Alerts',
     videoId: 'e1AkQf36duw',
     thumbnail: 'https://img.youtube.com/vi/e1AkQf36duw/0.jpg',
     description: 'Learn how to use XAUD alerts for gold trading.',
+    category: "pop-up",
   ),
   'Crypto': VideoModel(
     title: 'About Crypto Alerts',
     videoId: 'bDLYO5D7RoE',
     thumbnail: 'https://img.youtube.com/vi/bDLYO5D7RoE/0.jpg',
     description: 'Learn how to use Crypto alerts for digital asset trading.',
+    category: "pop-up",
   ),
 };
 
@@ -310,6 +313,7 @@ final Map<String, VideoModel> _categoryFreeAccessVideos = {
         'E1vwRZdTkvg', // Replace with user's specific video ID if different
     thumbnail: 'https://img.youtube.com/vi/E1vwRZdTkvg/0.jpg',
     description: 'Learn how to get free access to SOB alerts.',
+    category: "pop-up",
   ),
   'XAUD': VideoModel(
     title: 'How to get free XAUD Alerts',
@@ -317,6 +321,7 @@ final Map<String, VideoModel> _categoryFreeAccessVideos = {
         'u5TIlHaGxUs', // Replace with user's specific video ID if different
     thumbnail: 'https://img.youtube.com/vi/u5TIlHaGxUs/0.jpg',
     description: 'Learn how to get free access to XAUD alerts.',
+    category: "pop-up",
   ),
   'Crypto': VideoModel(
     title: 'How to get free Crypto Alerts',
@@ -324,6 +329,7 @@ final Map<String, VideoModel> _categoryFreeAccessVideos = {
         'bDLYO5D7RoE', // Replace with user's specific video ID if different
     thumbnail: 'https://img.youtube.com/vi/bDLYO5D7RoE/0.jpg',
     description: 'Learn how to get free access to Crypto alerts.',
+    category: "pop-up",
   ),
 };
 

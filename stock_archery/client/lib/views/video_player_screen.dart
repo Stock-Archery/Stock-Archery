@@ -1,7 +1,8 @@
 import 'package:client/models/video_model.dart';
 import 'package:client/utils/design_system/design_system.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -16,12 +17,7 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late YoutubePlayerController _controller;
-  bool isSaved = false;
-  bool isLiked = false;
   bool isFollowing = false;
-  bool isDownloading = false;
-  bool isDownloaded = false;
-  double downloadProgress = 0.0;
 
   @override
   void initState() {
@@ -90,70 +86,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     return '120K Students • 4.9 Rating';
   }
 
-  VideoModel? _getNextVideo() {
-    final list = [
-      VideoModel(
-        title: "Stock Option Buying strategy Part 1",
-        videoId: "BKoWmDwlfnQ",
-        thumbnail: "https://img.youtube.com/vi/BKoWmDwlfnQ/0.jpg",
-        description:
-            "Learn the fundamentals of option buying with real market examples.",
-      ),
-      VideoModel(
-        title: "Stock Option Buying strategy Part 2",
-        videoId: "MnopZVm7baM",
-        thumbnail: "https://img.youtube.com/vi/MnopZVm7baM/0.jpg",
-        description:
-            "Build advanced strategies for trading stock options in volatile markets.",
-      ),
-      VideoModel(
-        title: "Stock Option Buying strategy Part 3",
-        videoId: "bDLYO5D7RoE",
-        thumbnail: "https://img.youtube.com/vi/bDLYO5D7RoE/0.jpg",
-        description:
-            "Master risk management, strike selection, and execution timing.",
-      ),
-    ];
-
-    final index = list.indexWhere((v) => v.videoId == widget.video.videoId);
-    if (index != -1 && index < list.length - 1) {
-      return list[index + 1];
-    }
-    return null;
-  }
-
-  void _toggleSave() {
-    setState(() {
-      isSaved = !isSaved;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isSaved ? 'Saved to bookmarks' : 'Removed from bookmarks',
-          style: GoogleFonts.inter(color: Colors.white),
-        ),
-        backgroundColor: AppColors.pureBlack,
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
-  void _toggleLike() {
-    setState(() {
-      isLiked = !isLiked;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isLiked ? 'Added to liked videos' : 'Removed from liked videos',
-          style: GoogleFonts.inter(color: Colors.white),
-        ),
-        backgroundColor: AppColors.pureBlack,
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
   void _toggleFollow() {
     setState(() {
       isFollowing = !isFollowing;
@@ -168,118 +100,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         ),
         backgroundColor: AppColors.pureBlack,
         duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
-  void _shareVideo() {
-    final videoUrl = 'https://www.youtube.com/watch?v=${widget.video.videoId}';
-    Clipboard.setData(ClipboardData(text: videoUrl));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Video link copied to clipboard!',
-          style: GoogleFonts.inter(color: Colors.white),
-        ),
-        backgroundColor: AppColors.pureBlack,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _startDownloadSimulation() async {
-    if (isDownloading) return;
-    if (isDownloaded) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Video is already saved offline.',
-            style: GoogleFonts.inter(color: Colors.white),
-          ),
-          backgroundColor: AppColors.pureBlack,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      isDownloading = true;
-      downloadProgress = 0.0;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Starting download...',
-          style: GoogleFonts.inter(color: Colors.white),
-        ),
-        backgroundColor: AppColors.pureBlack,
-        duration: const Duration(seconds: 1),
-      ),
-    );
-
-    for (int i = 1; i <= 10; i++) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      if (!mounted) return;
-      setState(() {
-        downloadProgress = i / 10.0;
-      });
-    }
-
-    if (!mounted) return;
-    setState(() {
-      isDownloading = false;
-      isDownloaded = true;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Video downloaded successfully for offline viewing!',
-          style: GoogleFonts.inter(color: Colors.white),
-        ),
-        backgroundColor: Colors.green.shade800,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    Color? iconColor,
-    Widget? customIcon,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.pureBlack,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: AppColors.goldBright.withValues(alpha: 0.15),
-                width: 1,
-              ),
-            ),
-            child:
-                customIcon ??
-                Icon(icon, color: iconColor ?? AppColors.goldBright, size: 24),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              color: AppColors.subtleGrey,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -299,7 +119,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         ),
       ),
       builder: (context, player) {
-        final nextVideo = _getNextVideo();
         return Scaffold(
           backgroundColor: AppColors.deepObsidian,
           body: SafeArea(
@@ -516,65 +335,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
                         const SizedBox(height: 26),
 
-                        /// ACTION BUTTONS
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildActionButton(
-                              icon: isSaved
-                                  ? Icons.bookmark
-                                  : Icons.bookmark_border,
-                              iconColor: isSaved
-                                  ? AppColors.goldBright
-                                  : AppColors.goldBright.withValues(alpha: 0.7),
-                              label: isSaved ? 'Saved' : 'Save',
-                              onTap: _toggleSave,
-                            ),
-                            _buildActionButton(
-                              icon: isLiked
-                                  ? Icons.thumb_up_alt
-                                  : Icons.thumb_up_alt_outlined,
-                              iconColor: isLiked
-                                  ? AppColors.goldBright
-                                  : AppColors.goldBright.withValues(alpha: 0.7),
-                              label: isLiked ? 'Liked' : 'Like',
-                              onTap: _toggleLike,
-                            ),
-                            _buildActionButton(
-                              icon: Icons.download_rounded,
-                              label: isDownloading
-                                  ? '${(downloadProgress * 100).toInt()}%'
-                                  : (isDownloaded ? 'Saved' : 'Download'),
-                              onTap: _startDownloadSimulation,
-                              customIcon: isDownloading
-                                  ? SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        value: downloadProgress,
-                                        strokeWidth: 2.5,
-                                        valueColor:
-                                            const AlwaysStoppedAnimation<Color>(
-                                              AppColors.goldBright,
-                                            ),
-                                      ),
-                                    )
-                                  : (isDownloaded
-                                        ? const Icon(
-                                            Icons.check_circle_rounded,
-                                            color: Colors.green,
-                                            size: 24,
-                                          )
-                                        : null),
-                            ),
-                            _buildActionButton(
-                              icon: Icons.share_rounded,
-                              label: 'Share',
-                              onTap: _shareVideo,
-                            ),
-                          ],
-                        ),
-
                         const SizedBox(height: 30),
 
                         /// DESCRIPTION CARD
@@ -617,102 +377,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
                         const SizedBox(height: 30),
 
-                        /// NEXT LECTURE CARD
-                        if (nextVideo != null) ...[
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      VideoPlayerScreen(video: nextVideo),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: AppColors.pureBlack,
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(
-                                  color: AppColors.goldBright.withValues(
-                                    alpha: 0.16,
-                                  ),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Stack(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(18),
-                                        child: Image.network(
-                                          nextVideo.thumbnail,
-                                          width: 70,
-                                          height: 70,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      Container(
-                                        width: 70,
-                                        height: 70,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            18,
-                                          ),
-                                          color: AppColors.metallicGold
-                                              .withValues(alpha: 0.20),
-                                          border: Border.all(
-                                            color: AppColors.metallicGold
-                                                .withValues(alpha: 0.50),
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.play_arrow_rounded,
-                                          color: AppColors.goldBright,
-                                          size: 36,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Next Lecture',
-                                          style: GoogleFonts.inter(
-                                            color: AppColors.subtleGrey,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          nextVideo.title,
-                                          style: GoogleFonts.montserrat(
-                                            color: AppColors.onSurface,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    color: AppColors.goldBright,
-                                    size: 18,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                        ],
+
                       ],
                     ),
                   ),

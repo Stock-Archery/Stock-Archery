@@ -1,3 +1,4 @@
+import 'package:client/models/video_model.dart';
 import 'package:client/views/video_player_screen.dart';
 import 'package:client/viewmodels/video_viewmodel.dart';
 import 'package:client/viewmodels/auth_viewmodel.dart';
@@ -14,7 +15,7 @@ class VideoListView extends ConsumerStatefulWidget {
 }
 
 class _VideoListViewState extends ConsumerState<VideoListView> {
-  String _selectedTab = 'Free classes';
+  String _selectedTab = 'Free Classes';
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +63,7 @@ class _VideoListViewState extends ConsumerState<VideoListView> {
               vertical: AppSpacing.md,
             ),
             child: Row(
-              children: ['Free classes', 'XAUD', 'SOB'].map((tab) {
+              children: ['Free Classes', 'XAUD', 'SOB'].map((tab) {
                 final isSelected = _selectedTab == tab;
                 return Expanded(
                   child: GestureDetector(
@@ -123,13 +124,16 @@ class _VideoListViewState extends ConsumerState<VideoListView> {
     );
   }
 
-  Widget _buildContent(List<dynamic> videos, bool isPremium) {
-    if (_selectedTab == 'Free classes') {
+  Widget _buildContent(List<VideoModel> videos, bool isPremium) {
+    final categoryVideos =
+        videos.where((v) => v.category == _selectedTab).toList();
+
+    if (categoryVideos.isNotEmpty) {
       return ListView(
         padding: const EdgeInsets.only(top: 8),
         children: [
-          ...List.generate(videos.length, (index) {
-            final video = videos[index];
+          ...List.generate(categoryVideos.length, (index) {
+            final video = categoryVideos[index];
             return _VideoCard(
               video: video,
               index: index,
@@ -143,7 +147,8 @@ class _VideoListViewState extends ConsumerState<VideoListView> {
               },
             );
           }),
-          _PremiumLockedCard(isPremium: isPremium),
+          if (_selectedTab == 'Free Classes')
+            _PremiumLockedCard(isPremium: isPremium),
           const SizedBox(height: 40),
         ],
       );
