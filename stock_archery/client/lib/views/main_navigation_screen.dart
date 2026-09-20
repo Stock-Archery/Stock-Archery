@@ -5,10 +5,10 @@ import 'package:client/viewmodels/navigation_viewmodel.dart';
 import 'package:client/views/ai_bot_view.dart';
 import 'package:client/views/brokers_view.dart';
 import 'package:client/views/settings_view.dart';
-import 'package:client/views/stocks_view.dart';
 import 'package:client/views/subscription_view.dart';
 import 'package:client/views/video_list_view.dart';
 import 'package:client/views/alerts_view.dart';
+import 'package:client/views/career_screen.dart' show TradingClassScreen;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,6 +35,7 @@ class MainNavigationScreen extends ConsumerWidget {
       const BrokersView(),
       const AlertsView(),
       const SubscriptionView(),
+      const TradingClassScreen(),
     ];
 
     return Scaffold(
@@ -219,6 +220,17 @@ class MainNavigationScreen extends ConsumerWidget {
                 child: Icon(Icons.workspace_premium, size: 24),
               ),
               label: 'Premium',
+            ),
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.school_outlined, size: 24),
+              ),
+              activeIcon: Padding(
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.school, size: 24),
+              ),
+              label: 'Classes',
             ),
           ],
         ),
