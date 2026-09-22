@@ -19,6 +19,7 @@ class _UserAccessPageState extends State<UserAccessPage> {
   bool _hasSearched = false;
 
   // Track the premium switch values locally
+  bool _isPremium = false;
   bool _isSOB = false;
   bool _isXaud = false;
   bool _isCrypto = false;
@@ -55,6 +56,7 @@ class _UserAccessPageState extends State<UserAccessPage> {
         print('[log] UserAccessPage — user found: ${user['email']}');
         setState(() {
           _foundUser = user;
+          _isPremium = user['isPremium'] ?? false;
           _isSOB = user['isSOB_alert_premium'] ?? false;
           _isXaud = user['isXaud_alert_premium'] ?? false;
           _isCrypto = user['isCrypto_alert_premium'] ?? false;
@@ -92,6 +94,7 @@ class _UserAccessPageState extends State<UserAccessPage> {
 
     final firebaseUid = _foundUser!['firebaseUid'];
     final updates = {
+      'isPremium': _isPremium,
       'isSOB_alert_premium': _isSOB,
       'isXaud_alert_premium': _isXaud,
       'isCrypto_alert_premium': _isCrypto,
@@ -105,13 +108,14 @@ class _UserAccessPageState extends State<UserAccessPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Alert access updated successfully!'),
+              content: Text('Access updated successfully!'),
               backgroundColor: Colors.green,
             ),
           );
         }
         // Refresh local user details display
         setState(() {
+          _foundUser!['isPremium'] = _isPremium;
           _foundUser!['isSOB_alert_premium'] = _isSOB;
           _foundUser!['isXaud_alert_premium'] = _isXaud;
           _foundUser!['isCrypto_alert_premium'] = _isCrypto;
@@ -120,7 +124,7 @@ class _UserAccessPageState extends State<UserAccessPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Failed to update alert access in backend'),
+              content: Text('Failed to update access in backend'),
               backgroundColor: Colors.red,
             ),
           );
@@ -317,6 +321,16 @@ class _UserAccessPageState extends State<UserAccessPage> {
                       
                       const Divider(color: Colors.white10, height: 32),
 
+                      // Master Premium Toggle — the flag that gates AI chat,
+                      // chart analysis, videos, etc. app-wide. Visually
+                      // elevated (gold) since it's the most consequential
+                      // switch on this page.
+                      _buildPremiumMasterTile(
+                        value: _isPremium,
+                        onChanged: (val) => setState(() => _isPremium = val),
+                      ),
+                      const SizedBox(height: 24),
+
                       // Access Settings Section
                       Text(
                         'Premium Alert Subscriptions',
@@ -371,7 +385,7 @@ class _UserAccessPageState extends State<UserAccessPage> {
                           child: _isSaving
                               ? const CircularProgressIndicator(color: Colors.white)
                               : Text(
-                                  'Save Alert Subscriptions',
+                                  'Save Access Settings',
                                   style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                         ),
@@ -394,6 +408,131 @@ class _UserAccessPageState extends State<UserAccessPage> {
         Text(label, style: GoogleFonts.outfit(color: Colors.white38, fontSize: 13)),
         Text(value, style: GoogleFonts.outfit(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
       ],
+    );
+  }
+
+  // The master `isPremium` toggle — deliberately styled apart from the
+  // three indigo alert toggles below (gold, glowing, animated) since this
+  // is the single most consequential switch on the page: it's the flag
+  // that gates AI chat, chart analysis, videos, etc. across the whole app.
+  Widget _buildPremiumMasterTile({
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    const gold = Color(0xFFF2C744);
+    const goldDeep = Color(0xFFD4AF37);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: value
+              ? [goldDeep.withOpacity(0.28), const Color(0xFF1E293B)]
+              : [const Color(0xFF1E293B), const Color(0xFF1E293B)],
+        ),
+        border: Border.all(
+          color: value ? gold.withOpacity(0.8) : Colors.white12,
+          width: value ? 1.4 : 1,
+        ),
+        boxShadow: value
+            ? [
+                BoxShadow(
+                  color: gold.withOpacity(0.25),
+                  blurRadius: 24,
+                  spreadRadius: -4,
+                ),
+              ]
+            : [],
+      ),
+      child: Row(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: value
+                    ? [gold, goldDeep]
+                    : [Colors.white12, Colors.white12],
+              ),
+              boxShadow: value
+                  ? [BoxShadow(color: gold.withOpacity(0.5), blurRadius: 12)]
+                  : [],
+            ),
+            child: Icon(
+              Icons.workspace_premium_rounded,
+              color: value ? const Color(0xFF1E293B) : Colors.white38,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Full Premium Membership',
+                      style: GoogleFonts.outfit(
+                        color: value ? gold : Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    if (value) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: gold.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: gold.withOpacity(0.5)),
+                        ),
+                        child: Text(
+                          'ACTIVE',
+                          style: GoogleFonts.outfit(
+                            color: gold,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Master switch — unlocks AI chat, chart analysis, videos '
+                  'and every premium surface app-wide (grants 1 year).',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white54,
+                    fontSize: 11.5,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: const Color(0xFF1E293B),
+            activeTrackColor: gold,
+            inactiveThumbColor: Colors.white38,
+            inactiveTrackColor: Colors.white10,
+          ),
+        ],
+      ),
     );
   }
 

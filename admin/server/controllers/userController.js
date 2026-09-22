@@ -32,7 +32,7 @@ export const searchUser = async (req, res) => {
 
 export const updateUserAlertAccess = async (req, res) => {
   const { firebaseUid } = req.params;
-  const { isSOB_alert_premium, isXaud_alert_premium, isCrypto_alert_premium } = req.body;
+  const { isPremium, isSOB_alert_premium, isXaud_alert_premium, isCrypto_alert_premium } = req.body;
   console.log(`[log] PUT /users/alert-access/${firebaseUid} — body:`, JSON.stringify(req.body));
 
   try {
@@ -44,6 +44,14 @@ export const updateUserAlertAccess = async (req, res) => {
 
     const now = new Date();
     const oneYear = 365 * 24 * 60 * 60 * 1000;
+
+    // General premium (isPremium) is the master flag that gates AI chat,
+    // chart analysis, videos, etc. — separate from the 3 alert-category
+    // flags below. Same 1-year-grant convention as those for consistency.
+    if (isPremium !== undefined) {
+      user.isPremium = isPremium;
+      user.premiumExpiresAt = isPremium ? new Date(now.getTime() + oneYear) : null;
+    }
 
     if (isSOB_alert_premium !== undefined) {
       user.isSOB_alert_premium = isSOB_alert_premium;

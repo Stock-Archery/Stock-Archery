@@ -11,13 +11,26 @@ import '../services/app_config.dart';
 class ChatState {
   final List<ChatMessage> messages;
   final bool isLoading;
+  // One-shot signal: the server just returned a 403 limitReached response.
+  // The view listens for this flipping to true, shows the premium dialog,
+  // then calls clearLimitReached() to reset it.
+  final bool limitReached;
 
-  const ChatState({this.messages = const [], this.isLoading = false});
+  const ChatState({
+    this.messages = const [],
+    this.isLoading = false,
+    this.limitReached = false,
+  });
 
-  ChatState copyWith({List<ChatMessage>? messages, bool? isLoading}) {
+  ChatState copyWith({
+    List<ChatMessage>? messages,
+    bool? isLoading,
+    bool? limitReached,
+  }) {
     return ChatState(
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
+      limitReached: limitReached ?? this.limitReached,
     );
   }
 }
@@ -94,7 +107,9 @@ class ChatViewModel extends StateNotifier<ChatState> {
       } else if (response.statusCode == 403) {
         final data = json.decode(response.body);
         if (data['limitReached'] == true) {
-          _showError('Premium limit reached. Please upgrade to continue.');
+          // Surface this as the premium dialog (via the view's ref.listen),
+          // not a chat bubble — no message was actually sent.
+          state = state.copyWith(isLoading: false, limitReached: true);
         } else {
           _showError('Error: ${data['message']}');
         }
@@ -104,6 +119,10 @@ class ChatViewModel extends StateNotifier<ChatState> {
     } catch (e) {
       _showError('Connection failed: $e');
     }
+  }
+
+  void clearLimitReached() {
+    state = state.copyWith(limitReached: false);
   }
 
   void _showError(String error) {

@@ -1,6 +1,14 @@
 const axios = require('axios');
 const User = require('../models/User');
 
+// India has a single fixed UTC+5:30 offset year-round (no DST), so the free
+// daily chat limit can reset at IST midnight with a constant offset instead
+// of a timezone library. Returns the IST calendar day as "YYYY-MM-DD".
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+function istDateKey(date = new Date()) {
+  return new Date(date.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
 // Helper to parse OpenAI Responses API timeline
 function parseOpenAIResponse(apiResponse) {
   const output = apiResponse?.output || [];
@@ -71,7 +79,7 @@ function parseOpenAIResponse(apiResponse) {
 }
 
 exports.chat = async (req, res) => {
-  const { message, isPremium } = req.body;
+  const { message } = req.body;
   const uid = req.user.uid;
   if (!message) return res.status(400).json({ message: 'Message is required' });
 
@@ -79,12 +87,25 @@ exports.chat = async (req, res) => {
   try {
     user = await User.findOne({ firebaseUid: uid });
     if (!user) return res.status(404).json({ message: 'User not found' });
-
-    if (!isPremium && user.textChatCount >= 5) {
-      return res.status(403).json({ limitReached: true, message: 'Free chat limit reached' });
-    }
   } catch (err) {
     return res.status(500).json({ message: 'Database error', error: err.message });
+  }
+
+  // Premium status is always derived from the authenticated user's own DB
+  // record, never from the client-supplied body — a client-controlled flag
+  // here would let anyone bypass the free-chat limit by sending isPremium:true.
+  const isPremium = user.isPremium === true;
+
+  // The 5-message limit is PER IST CALENDAR DAY, not lifetime. There's no
+  // separate reset job: textChatCount is only ever meaningful alongside
+  // textChatCountDate, so a stale (or missing, for pre-existing users) date
+  // just means "effectively 0 today" — the actual reset happens atomically
+  // on the next counted increment below.
+  const todayKey = istDateKey();
+  const effectiveCount = user.textChatCountDate === todayKey ? user.textChatCount : 0;
+
+  if (!isPremium && effectiveCount >= 5) {
+    return res.status(403).json({ limitReached: true, message: 'Free daily chat limit reached. Try again tomorrow.' });
   }
 
   const fetchAIResponse = async (isRetry = false) => {
@@ -137,8 +158,29 @@ exports.chat = async (req, res) => {
       });
 
       if (!isPremium && parsed.reply) {
-        user.textChatCount = (user.textChatCount || 0) + 1;
-        await user.save();
+        // Atomic reset-or-increment in a single pipeline update: if the
+        // stored date still matches today, increment; otherwise this is the
+        // first counted message of a new IST day, so reset to 1. Doing the
+        // rollover and the increment in one atomic op (rather than a
+        // separate read-then-write reset) avoids a lost update when a user
+        // fires several concurrent /api/chat requests.
+        await User.findOneAndUpdate(
+          { _id: user._id },
+          [
+            {
+              $set: {
+                textChatCount: {
+                  $cond: [
+                    { $eq: ['$textChatCountDate', todayKey] },
+                    { $add: ['$textChatCount', 1] },
+                    1,
+                  ],
+                },
+                textChatCountDate: todayKey,
+              },
+            },
+          ]
+        );
       }
 
       return res.json(parsed);
@@ -153,12 +195,23 @@ exports.chat = async (req, res) => {
 };
 
 exports.chartAnalysis = async (req, res) => {
-  const { message, image, isPremium } = req.body; // 'image' should be base64 string
-  
-  if (!isPremium) {
+  const { message, image } = req.body; // 'image' should be base64 string
+  const uid = req.user.uid;
+
+  let user;
+  try {
+    user = await User.findOne({ firebaseUid: uid });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+  } catch (err) {
+    return res.status(500).json({ message: 'Database error', error: err.message });
+  }
+
+  // Premium status is always derived from the authenticated user's own DB
+  // record, never from the client-supplied body (see exports.chat above).
+  if (!user.isPremium) {
     return res.status(403).json({ limitReached: true, message: 'Chart analysis is a premium feature' });
   }
-  
+
   if (!message || !image) {
     return res.status(400).json({ message: 'Both message and image are required for chart analysis' });
   }

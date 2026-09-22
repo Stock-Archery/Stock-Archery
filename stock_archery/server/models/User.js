@@ -87,6 +87,13 @@ const userSchema = new mongoose.Schema({
   textChatCount: {
     type: Number,
     default: 0
+  },
+  // Free-chat daily limit: textChatCount only means "messages sent today"
+  // when this matches the current IST calendar day ("YYYY-MM-DD"); a stale
+  // or missing value means the count is effectively 0 (see chatController.js).
+  textChatCountDate: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true,

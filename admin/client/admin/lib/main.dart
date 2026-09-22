@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 // import 'viewmodels/stock_viewmodel.dart';
 import 'viewmodels/alert_viewmodel.dart';
+import 'viewmodels/server_status_viewmodel.dart';
 import 'views/home_page.dart';
 
 Future<void> main() async {
@@ -13,6 +14,7 @@ Future<void> main() async {
       providers: [
         // ChangeNotifierProvider(create: (_) => StockViewModel()),
         ChangeNotifierProvider(create: (_) => AlertViewModel()),
+        ChangeNotifierProvider(create: (_) => ServerStatusViewModel()),
       ],
       child: const AdminApp(),
     ),

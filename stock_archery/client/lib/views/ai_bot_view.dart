@@ -125,6 +125,21 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    // Server returned 403 limitReached — show the premium dialog once, then
+    // clear the flag so it doesn't re-fire on the next rebuild.
+    ref.listen(chatProvider, (previous, next) {
+      if (next.limitReached) {
+        ref.read(chatProvider.notifier).clearLimitReached();
+        _showPremiumDialog(ref, false);
+      }
+    });
+    ref.listen(chartProvider, (previous, next) {
+      if (next.limitReached) {
+        ref.read(chartProvider.notifier).clearLimitReached();
+        _showPremiumDialog(ref, true);
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.deepObsidian,
       appBar: _buildAppBar(),
@@ -512,15 +527,30 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                               return;
                             }
 
-                            final isPremium = ref.read(premiumProvider).superPremium;
+                            // Premium status must consider BOTH the RevenueCat
+                            // entitlement and the backend `isPremium` flag —
+                            // an admin can grant premium directly in MongoDB
+                            // without a RevenueCat purchase, and that must be
+                            // honored here too (previously this only checked
+                            // RevenueCat, so DB-granted premium was invisible).
                             final userModel = ref.read(authProvider).user;
-                            final textChatCount = userModel?.textChatCount ?? 0;
+                            final isPremium = ref.read(premiumProvider).superPremium ||
+                                (userModel?.isPremium ?? false);
 
-                            if (!isPremium) {
-                              if (isChart || (!isChart && textChatCount >= 5)) {
-                                _showPremiumDialog(ref, isChart);
-                                return;
-                              }
+                            // Chart analysis is a hard premium-only feature.
+                            // The free-text-chat count is NOT gated here —
+                            // the locally cached textChatCount is only ever
+                            // refreshed at login/manual sync, so it goes
+                            // stale mid-session and either blocks a user who
+                            // still has messages left, or (worse) lets
+                            // requests past this point while the count is
+                            // actually already exhausted server-side. The
+                            // server is the authoritative source for the
+                            // free-chat limit and returns a clean 403 with
+                            // limitReached:true, which is handled below.
+                            if (!isPremium && isChart) {
+                              _showPremiumDialog(ref, isChart);
+                              return;
                             }
 
                             final message = ChatMessage(
@@ -589,7 +619,7 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
         content: Text(
           isChart 
               ? "Chart Analysis is exclusively available for premium members. Upgrade now to unlock this powerful tool."
-              : "You have used your 5 free AI text queries for life. Upgrade to Premium to get unlimited AI market insights.",
+              : "You have used your 5 free AI text queries for today. Upgrade to Premium to get unlimited AI market insights, or try again tomorrow.",
           style: GoogleFonts.inter(
             color: AppColors.subtleGrey,
             fontSize: 14,
