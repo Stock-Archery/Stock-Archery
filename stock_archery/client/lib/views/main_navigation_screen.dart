@@ -26,7 +26,10 @@ class MainNavigationScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(navigationProvider);
     final user = ref.watch(authProvider).user;
-    final isPremium = ref.watch(premiumProvider).superPremium;
+    // Premium badge must reflect BOTH the RevenueCat entitlement and the
+    // backend `isPremium` flag — admin-granted premium (set directly in
+    // MongoDB, no RevenueCat purchase) was previously invisible here.
+    final isPremium = ref.watch(premiumProvider).superPremium || (user?.isPremium ?? false);
 
     final List<Widget> screens = [
       const VideoListView(),

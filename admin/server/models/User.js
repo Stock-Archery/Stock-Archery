@@ -56,6 +56,11 @@ const userSchema = new mongoose.Schema(
       },
     ],
     textChatCount: { type: Number, default: 0 },
+    // Free-chat daily limit: textChatCount only means "messages sent today"
+    // when this matches the current IST calendar day ("YYYY-MM-DD"); kept
+    // here purely so this mirrored schema doesn't reject/strip the field on
+    // any future admin-side write — see stock_archery/server/models/User.js.
+    textChatCountDate: { type: String, default: null },
   },
   { timestamps: true, collection: "users" }
 );

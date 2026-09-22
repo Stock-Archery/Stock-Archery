@@ -39,16 +39,33 @@ class SessionService {
     }
 
     // 2. Save remotely to Firebase Realtime Database
+    //
+    // If this write silently fails (transient network blip right after
+    // login) while the local SharedPreferences write above already
+    // succeeded, `active_sessions/{uid}` in RTDB is left holding an OLDER
+    // session id. The next time the app opens on this SAME device,
+    // checkAndListenToSession() sees local != remote and force-logs the
+    // user out, even though no other device was ever involved. Retrying a
+    // few times here closes that window.
     if (_isFirebaseAvailable) {
-      try {
-        final ref = FirebaseDatabase.instance.ref("active_sessions/$uid");
-        await ref.set({
-          "device_id": newSessionId,
-          "last_updated": ServerValue.timestamp,
-        });
-        debugPrint('[SessionService] Registered session ID successfully in Firebase RTDB.');
-      } catch (e) {
-        debugPrint('[SessionService] ❌ Error writing session ID to Firebase RTDB: $e');
+      final ref = FirebaseDatabase.instance.ref("active_sessions/$uid");
+      const maxAttempts = 3;
+      for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          await ref.set({
+            "device_id": newSessionId,
+            "last_updated": ServerValue.timestamp,
+          });
+          debugPrint('[SessionService] Registered session ID successfully in Firebase RTDB.');
+          break;
+        } catch (e) {
+          debugPrint('[SessionService] ❌ Error writing session ID to Firebase RTDB (attempt $attempt/$maxAttempts): $e');
+          if (attempt == maxAttempts) {
+            debugPrint('[SessionService] ⚠️ Giving up on RTDB session write after $maxAttempts attempts — local/remote session may now be out of sync.');
+          } else {
+            await Future.delayed(Duration(milliseconds: 500 * attempt));
+          }
+        }
       }
     } else {
       debugPrint('[SessionService] ⚠️ Firebase not available. Skipping Realtime Database write.');
