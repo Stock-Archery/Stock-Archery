@@ -48,7 +48,7 @@ app.get('/', (req, res) => {
   res.json({
     status: "ok",
     message: "Stock Archery Main Server",
-    version: "1.0.3",
+    version: "1.0.4",
     startedAt,
     lastUpdated,
     uptime: Math.floor(process.uptime()) + "s",
