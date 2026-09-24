@@ -11,6 +11,56 @@ import 'package:client/Features/payment/view_model/premium_provider.dart';
 import 'package:client/viewmodels/auth_viewmodel.dart';
 import 'package:client/viewmodels/navigation_viewmodel.dart';
 
+/// Full-screen, pinch-to-zoom viewer for an image in the chat. Handles both a
+/// just-picked local file and a saved ImageKit URL.
+class _ChatImageViewer extends StatelessWidget {
+  final String url;
+  const _ChatImageViewer({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    const broken = Center(
+      child: Icon(Icons.broken_image_outlined, color: Colors.white54, size: 64),
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SizedBox.expand(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 5.0,
+          child: Center(
+            child: url.startsWith('http')
+                ? Image.network(
+                    url,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) => progress == null
+                        ? child
+                        : const Center(
+                            child: CircularProgressIndicator(color: AppColors.goldBright),
+                          ),
+                    errorBuilder: (context, error, stack) => broken,
+                  )
+                : Image.file(
+                    File(url),
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stack) => broken,
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class AiBotView extends ConsumerStatefulWidget {
   const AiBotView({super.key});
 
@@ -399,7 +449,10 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
       onSend: (_) {}, // Handled by our custom input
       messages: messages,
       readOnly: true,
+      // Scrolling to the top loads the next older page of saved history.
+      messageListOptions: MessageListOptions(onLoadEarlier: viewModel.loadEarlier),
       messageOptions: MessageOptions(
+        onTapMedia: _openImageFullScreen,
         showOtherUsersAvatar: true,
         showTime: true,
         containerColor: AppColors.pureBlack,
@@ -504,6 +557,21 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                       Expanded(
                         child: TextField(
                           controller: controller,
+                          maxLength: kMaxChatMessageLength,
+                          // Hide the counter until the user is close to the
+                          // limit, so it doesn't clutter normal use.
+                          buildCounter: (context, {required currentLength, required isFocused, required maxLength}) {
+                            if (currentLength < kMaxChatMessageLength * 0.9) return null;
+                            return Text(
+                              '$currentLength/$maxLength',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: currentLength >= maxLength!
+                                    ? Colors.redAccent
+                                    : AppColors.subtleGrey,
+                              ),
+                            );
+                          },
                           style: GoogleFonts.inter(color: AppColors.onSurface, fontSize: 14),
                           decoration: InputDecoration(
                             hintText: "Ask anything about stocks & charts...",
@@ -520,7 +588,12 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                         child: GestureDetector(
                           onTap: () {
                             if (controller.text.isEmpty) return;
-                            if (isChart && _selectedImage == null) {
+                            // The image is only required to START a chart chat.
+                            // Once a chart is in the conversation, follow-up
+                            // questions can be sent without re-uploading it
+                            // (the server re-attaches the latest chart).
+                            final chartChatIsEmpty = ref.read(chartProvider).messages.isEmpty;
+                            if (isChart && _selectedImage == null && chartChatIsEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text("Please upload a chart image first!")),
                               );
@@ -557,6 +630,17 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                               text: controller.text,
                               user: viewModel.user,
                               createdAt: DateTime.now(),
+                              // Show the chart in the bubble right away. Saved
+                              // history shows it via its ImageKit URL instead.
+                              medias: (isChart && _selectedImage != null)
+                                  ? [
+                                      ChatMedia(
+                                        url: _selectedImage!.path,
+                                        fileName: 'chart.jpg',
+                                        type: MediaType.image,
+                                      ),
+                                    ]
+                                  : null,
                             );
                             viewModel.onSend(message, imageFile: isChart ? _selectedImage : null, isPremium: isPremium);
                             if (isChart) setState(() => _selectedImage = null);
@@ -590,6 +674,12 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
           ),
         ],
       ),
+    );
+  }
+
+  void _openImageFullScreen(ChatMedia media) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => _ChatImageViewer(url: media.url)),
     );
   }
 

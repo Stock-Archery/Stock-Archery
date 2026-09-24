@@ -14,7 +14,6 @@ import 'dart:io' show Platform;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'session_provider.dart';
-import 'chat_viewmodel.dart';
 
 // Provider for raw AuthService
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -70,7 +69,6 @@ class AuthViewModel extends StateNotifier<AuthState> {
       _authService.authStateChanges.listen((firebaseUser) async {
         if (firebaseUser == null) {
           _cancelAlertsSubscription(); // Cancel listener on logout
-          _resetChatState(); // Don't leak the previous account's chat history
           state = AuthState(user: null, isInitializing: false);
         } else {
           // If a firebase session already exists, sync with backend to get MongoDB profile
@@ -327,7 +325,6 @@ class AuthViewModel extends StateNotifier<AuthState> {
     debugPrint('[AuthViewModel] Executing manual logout.');
 
     _cancelAlertsSubscription(); // Cancel real-time subscription on logout
-    _resetChatState(); // Don't leak this account's chat history into the next login
 
     // Clear local session ID from shared preferences
     await _ref.read(sessionServiceProvider).clearLocalSession();
@@ -347,7 +344,6 @@ class AuthViewModel extends StateNotifier<AuthState> {
       '[AuthViewModel] 🚨 Executing force logout due to duplicate active session.',
     );
     _cancelAlertsSubscription(); // Cancel real-time subscription on logout
-    _resetChatState(); // Don't leak this account's chat history into the next login
     await _authService.logout();
 
     //revenue cat se logout
@@ -411,15 +407,6 @@ class AuthViewModel extends StateNotifier<AuthState> {
     } catch (e) {
       debugPrint('[AuthViewModel] ❌ Failed to start alert access listener: $e');
     }
-  }
-
-  // Chat/chart message history lives in global providers (chatProvider,
-  // chartProvider) that are never scoped to the logged-in user. Without this,
-  // the previous account's AI chat messages stay visible after switching
-  // accounts in the same app session.
-  void _resetChatState() {
-    _ref.invalidate(chatProvider);
-    _ref.invalidate(chartProvider);
   }
 
   // Safely dispose of Realtime Database listener
