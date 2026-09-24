@@ -214,10 +214,28 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
   }
 
   PreferredSizeWidget _buildAppBar() {
+    // The button clears whichever chat is on screen, and is disabled when
+    // that chat is empty or a reply is still loading.
+    final activeChat = ref.watch(_tabController.index == 1 ? chartProvider : chatProvider);
+    final canClear = activeChat.messages.isNotEmpty && !activeChat.isLoading;
+
     return AppBar(
       backgroundColor: AppColors.deepObsidian,
       elevation: 0,
       automaticallyImplyLeading: false,
+      actions: [
+        IconButton(
+          tooltip: 'Clear chat',
+          icon: Icon(
+            Icons.delete_outline_rounded,
+            color: canClear
+                ? AppColors.subtleGrey
+                : AppColors.subtleGrey.withValues(alpha: 0.3),
+          ),
+          onPressed: canClear ? _confirmClearChat : null,
+        ),
+        const SizedBox(width: 8),
+      ],
       title: Row(
         children: [
           Container(
@@ -673,6 +691,70 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _confirmClearChat() async {
+    final isChart = _tabController.index == 1;
+    final name = isChart ? 'Chart Insights' : 'Trading Insights';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.pureBlack,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.goldBright.withValues(alpha: 0.3)),
+        ),
+        title: Text(
+          'Clear $name chat?',
+          style: GoogleFonts.montserrat(
+            color: AppColors.onSurface,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        content: Text(
+          isChart
+              ? 'This permanently deletes this conversation and the chart images you uploaded. It cannot be undone.'
+              : 'This permanently deletes this conversation. It cannot be undone.',
+          style: GoogleFonts.inter(color: AppColors.subtleGrey, fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                color: AppColors.subtleGrey,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text('Clear', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final cleared = await ref
+        .read(isChart ? chartProvider.notifier : chatProvider.notifier)
+        .clearHistory();
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(cleared ? '$name chat cleared' : "Couldn't clear the chat. Please try again."),
       ),
     );
   }

@@ -135,6 +135,36 @@ class ChatViewModel extends StateNotifier<ChatState> {
     }
   }
 
+  /// Deletes this thread's saved history on the server, then empties the list.
+  /// Returns false, leaving the chat untouched, if the server call fails.
+  Future<bool> clearHistory() async {
+    try {
+      final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (token == null) return false;
+
+      final uri = Uri.parse('$baseUrl/chat/history').replace(queryParameters: {
+        'type': isChart ? 'chart' : 'text',
+      });
+      final response = await http
+          .delete(uri, headers: {'Authorization': 'Bearer $token'})
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode != 200) {
+        debugPrint('[ChatViewModel] clearHistory failed: ${response.statusCode}');
+        return false;
+      }
+      if (!mounted) return true;
+
+      _hasMoreHistory = false;
+      _oldestCreatedAt = null;
+      state = state.copyWith(messages: const []);
+      return true;
+    } catch (e) {
+      debugPrint('[ChatViewModel] clearHistory failed: $e');
+      return false;
+    }
+  }
+
   /// Loads the next older page. Wired to dash_chat_2's onLoadEarlier, which
   /// fires when the user scrolls to the top of the list.
   Future<void> loadEarlier() async {
