@@ -440,7 +440,7 @@ class _AlertPostCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Full-width chart image (only if present)
-          if (post.imageBase64 != null && post.imageBase64!.isNotEmpty)
+          if (post.hasImage)
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(AppRadii.base),
@@ -451,17 +451,14 @@ class _AlertPostCard extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => _FullScreenImage(
-                        imageBase64: post.imageBase64!,
+                        imageUrl: post.hasImageUrl ? post.imageUrl : null,
+                        imageBase64: post.hasImageUrl ? null : post.imageBase64,
                         title: post.category,
                       ),
                     ),
                   );
                 },
-                child: Image.memory(
-                  base64Decode(post.imageBase64!),
-                  fit: BoxFit.fitWidth,
-                  width: double.infinity,
-                ),
+                child: _AlertImage(post: post),
               ),
             ),
 
@@ -506,11 +503,68 @@ class _AlertPostCard extends StatelessWidget {
   }
 }
 
+/// The image inside an alert card in the feed. New posts load a resized
+/// version from ImageKit; older posts still carry base64 and decode it.
+class _AlertImage extends StatelessWidget {
+  final AlertPost post;
+
+  const _AlertImage({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    if (post.hasImageUrl) {
+      return Image.network(
+        post.feedImageUrl!,
+        fit: BoxFit.fitWidth,
+        width: double.infinity,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          final total = progress.expectedTotalBytes;
+          return SizedBox(
+            height: 220,
+            child: Center(
+              child: CircularProgressIndicator(
+                color: AppColors.goldBright,
+                value: total != null ? progress.cumulativeBytesLoaded / total : null,
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stack) => SizedBox(
+          height: 120,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.broken_image_outlined, color: AppColors.subtleGrey, size: 32),
+                const SizedBox(height: 6),
+                Text(
+                  'Image unavailable',
+                  style: GoogleFonts.inter(color: AppColors.subtleGrey, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Image.memory(
+      base64Decode(post.imageBase64!),
+      fit: BoxFit.fitWidth,
+      width: double.infinity,
+    );
+  }
+}
+
+/// Full-screen, pinch-to-zoom view of an alert image: the original from
+/// ImageKit for new posts, or the inline base64 for older ones.
 class _FullScreenImage extends StatelessWidget {
-  final String imageBase64;
+  final String? imageUrl;
+  final String? imageBase64;
   final String title;
 
-  const _FullScreenImage({required this.imageBase64, required this.title});
+  const _FullScreenImage({this.imageUrl, this.imageBase64, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -535,7 +589,22 @@ class _FullScreenImage extends StatelessWidget {
         minScale: 0.5,
         maxScale: 4.0,
         child: Center(
-          child: Image.memory(base64Decode(imageBase64), fit: BoxFit.contain),
+          child: imageUrl != null
+              ? Image.network(
+                  imageUrl!,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, progress) => progress == null
+                      ? child
+                      : const Center(
+                          child: CircularProgressIndicator(color: AppColors.goldBright),
+                        ),
+                  errorBuilder: (context, error, stack) => const Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.white54,
+                    size: 64,
+                  ),
+                )
+              : Image.memory(base64Decode(imageBase64!), fit: BoxFit.contain),
         ),
       ),
     );
