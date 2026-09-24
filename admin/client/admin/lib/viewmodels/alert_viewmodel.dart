@@ -23,6 +23,11 @@ class AlertViewModel extends ChangeNotifier {
   bool _isSending = false;
   bool get isSending => _isSending;
 
+  /// Why the last send failed, in words the admin can act on. Null after a
+  /// successful send.
+  String? _lastError;
+  String? get lastError => _lastError;
+
   List<AlertPost> _alerts = [];
   List<AlertPost> get alerts => _alerts;
 
@@ -42,9 +47,13 @@ class AlertViewModel extends ChangeNotifier {
   }
 
   Future<void> pickImage({BuildContext? context}) async {
+    // Bound the size: a full-resolution phone photo can be 10 MB+, which is
+    // slow to upload and pointless for a chart. 2560px stays sharp.
     final XFile? image = await _picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 100,
+      imageQuality: 90,
+      maxWidth: 2560,
+      maxHeight: 2560,
     );
     if (image != null) {
       // Page stays mounted during pick/crop; context is only used for WebUiSettings.
@@ -56,7 +65,9 @@ class AlertViewModel extends ChangeNotifier {
   Future<void> pickImageFromCamera({BuildContext? context}) async {
     final XFile? image = await _picker.pickImage(
       source: ImageSource.camera,
-      imageQuality: 100,
+      imageQuality: 90,
+      maxWidth: 2560,
+      maxHeight: 2560,
     );
     if (image != null) {
       // Page stays mounted during pick/crop; context is only used for WebUiSettings.
@@ -106,6 +117,7 @@ class AlertViewModel extends ChangeNotifier {
 
     print('[log] AlertViewModel — sendAlert: category=$_selectedCategory, message=${_message.substring(0, _message.length > 50 ? 50 : _message.length)}...');
     _isSending = true;
+    _lastError = null;
     notifyListeners();
 
     try {
@@ -131,6 +143,7 @@ class AlertViewModel extends ChangeNotifier {
       return true;
     } catch (e) {
       print('[log] AlertViewModel — sendAlert error: $e');
+      _lastError = e.toString().replaceFirst('Exception: ', '');
       _isSending = false;
       notifyListeners();
       return false;

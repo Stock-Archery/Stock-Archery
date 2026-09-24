@@ -59,6 +59,13 @@ android {
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            // R8 (enabled by default for Flutter release builds) broke Firebase
+            // Auth's persisted session: with R8 on, currentUser was null on every
+            // cold start, so users were logged out after being removed from
+            // recents. Verified fixed with R8 off. To re-enable R8, it needs
+            // Firebase keep rules in proguard-rules.pro first.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/alert_post.dart';
@@ -24,17 +25,29 @@ class AdminApiService {
     throw Exception('Failed to load alerts');
   }
 
+  /// Creates an alert. The image (if any) is sent as base64 only in transit:
+  /// the server uploads it to ImageKit and stores just the link.
+  /// Throws an Exception whose message is safe to show the admin.
   Future<AlertPost> createAlert(String category, String text, String? imageBase64) async {
-    print('[log] POST $_baseUrl/alerts — category: $category, text: ${text.substring(0, text.length > 50 ? 50 : text.length)}...');
-    final response = await http.post(
-      Uri.parse('$_baseUrl/alerts'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'category': category,
-        'text': text,
-        if (imageBase64 != null) 'imageBase64': imageBase64,
-      }),
-    );
+    print('[log] POST $_baseUrl/alerts — category: $category, text: ${text.substring(0, text.length > 50 ? 50 : text.length)}..., image: ${imageBase64 != null}');
+
+    final http.Response response;
+    try {
+      // Generous timeout: the server uploads the image to ImageKit before it replies.
+      response = await http
+          .post(
+            Uri.parse('$_baseUrl/alerts'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'category': category,
+              'text': text,
+              if (imageBase64 != null) 'imageBase64': imageBase64,
+            }),
+          )
+          .timeout(const Duration(seconds: 90));
+    } on TimeoutException {
+      throw Exception('The upload timed out. Check your connection and try again.');
+    }
 
     if (response.statusCode == 201) {
       final body = jsonDecode(response.body);
@@ -42,7 +55,14 @@ class AdminApiService {
       return AlertPost.fromJson(body['alert']);
     }
     print('[log] POST /alerts — ${response.statusCode}: ${response.body}');
-    throw Exception('Failed to create alert');
+
+    // The server explains itself (e.g. image too large, storage not configured).
+    var message = 'Failed to create alert';
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map && body['message'] is String) message = body['message'];
+    } catch (_) {}
+    throw Exception(message);
   }
 
   Future<bool> deleteAlert(String id) async {

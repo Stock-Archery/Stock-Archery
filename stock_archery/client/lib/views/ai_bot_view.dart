@@ -11,6 +11,56 @@ import 'package:client/Features/payment/view_model/premium_provider.dart';
 import 'package:client/viewmodels/auth_viewmodel.dart';
 import 'package:client/viewmodels/navigation_viewmodel.dart';
 
+/// Full-screen, pinch-to-zoom viewer for an image in the chat. Handles both a
+/// just-picked local file and a saved ImageKit URL.
+class _ChatImageViewer extends StatelessWidget {
+  final String url;
+  const _ChatImageViewer({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    const broken = Center(
+      child: Icon(Icons.broken_image_outlined, color: Colors.white54, size: 64),
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SizedBox.expand(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 5.0,
+          child: Center(
+            child: url.startsWith('http')
+                ? Image.network(
+                    url,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) => progress == null
+                        ? child
+                        : const Center(
+                            child: CircularProgressIndicator(color: AppColors.goldBright),
+                          ),
+                    errorBuilder: (context, error, stack) => broken,
+                  )
+                : Image.file(
+                    File(url),
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stack) => broken,
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class AiBotView extends ConsumerStatefulWidget {
   const AiBotView({super.key});
 
@@ -164,10 +214,28 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
   }
 
   PreferredSizeWidget _buildAppBar() {
+    // The button clears whichever chat is on screen, and is disabled when
+    // that chat is empty or a reply is still loading.
+    final activeChat = ref.watch(_tabController.index == 1 ? chartProvider : chatProvider);
+    final canClear = activeChat.messages.isNotEmpty && !activeChat.isLoading;
+
     return AppBar(
       backgroundColor: AppColors.deepObsidian,
       elevation: 0,
       automaticallyImplyLeading: false,
+      actions: [
+        IconButton(
+          tooltip: 'Clear chat',
+          icon: Icon(
+            Icons.delete_outline_rounded,
+            color: canClear
+                ? AppColors.subtleGrey
+                : AppColors.subtleGrey.withValues(alpha: 0.3),
+          ),
+          onPressed: canClear ? _confirmClearChat : null,
+        ),
+        const SizedBox(width: 8),
+      ],
       title: Row(
         children: [
           Container(
@@ -399,7 +467,10 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
       onSend: (_) {}, // Handled by our custom input
       messages: messages,
       readOnly: true,
+      // Scrolling to the top loads the next older page of saved history.
+      messageListOptions: MessageListOptions(onLoadEarlier: viewModel.loadEarlier),
       messageOptions: MessageOptions(
+        onTapMedia: _openImageFullScreen,
         showOtherUsersAvatar: true,
         showTime: true,
         containerColor: AppColors.pureBlack,
@@ -504,6 +575,21 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                       Expanded(
                         child: TextField(
                           controller: controller,
+                          maxLength: kMaxChatMessageLength,
+                          // Hide the counter until the user is close to the
+                          // limit, so it doesn't clutter normal use.
+                          buildCounter: (context, {required currentLength, required isFocused, required maxLength}) {
+                            if (currentLength < kMaxChatMessageLength * 0.9) return null;
+                            return Text(
+                              '$currentLength/$maxLength',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: currentLength >= maxLength!
+                                    ? Colors.redAccent
+                                    : AppColors.subtleGrey,
+                              ),
+                            );
+                          },
                           style: GoogleFonts.inter(color: AppColors.onSurface, fontSize: 14),
                           decoration: InputDecoration(
                             hintText: "Ask anything about stocks & charts...",
@@ -520,7 +606,12 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                         child: GestureDetector(
                           onTap: () {
                             if (controller.text.isEmpty) return;
-                            if (isChart && _selectedImage == null) {
+                            // The image is only required to START a chart chat.
+                            // Once a chart is in the conversation, follow-up
+                            // questions can be sent without re-uploading it
+                            // (the server re-attaches the latest chart).
+                            final chartChatIsEmpty = ref.read(chartProvider).messages.isEmpty;
+                            if (isChart && _selectedImage == null && chartChatIsEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text("Please upload a chart image first!")),
                               );
@@ -557,6 +648,17 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
                               text: controller.text,
                               user: viewModel.user,
                               createdAt: DateTime.now(),
+                              // Show the chart in the bubble right away. Saved
+                              // history shows it via its ImageKit URL instead.
+                              medias: (isChart && _selectedImage != null)
+                                  ? [
+                                      ChatMedia(
+                                        url: _selectedImage!.path,
+                                        fileName: 'chart.jpg',
+                                        type: MediaType.image,
+                                      ),
+                                    ]
+                                  : null,
                             );
                             viewModel.onSend(message, imageFile: isChart ? _selectedImage : null, isPremium: isPremium);
                             if (isChart) setState(() => _selectedImage = null);
@@ -590,6 +692,76 @@ class _AiBotViewState extends ConsumerState<AiBotView> with SingleTickerProvider
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _confirmClearChat() async {
+    final isChart = _tabController.index == 1;
+    final name = isChart ? 'Chart Insights' : 'Trading Insights';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.pureBlack,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.goldBright.withValues(alpha: 0.3)),
+        ),
+        title: Text(
+          'Clear $name chat?',
+          style: GoogleFonts.montserrat(
+            color: AppColors.onSurface,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        content: Text(
+          isChart
+              ? 'This permanently deletes this conversation and the chart images you uploaded. It cannot be undone.'
+              : 'This permanently deletes this conversation. It cannot be undone.',
+          style: GoogleFonts.inter(color: AppColors.subtleGrey, fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                color: AppColors.subtleGrey,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text('Clear', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final cleared = await ref
+        .read(isChart ? chartProvider.notifier : chatProvider.notifier)
+        .clearHistory();
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(cleared ? '$name chat cleared' : "Couldn't clear the chat. Please try again."),
+      ),
+    );
+  }
+
+  void _openImageFullScreen(ChatMedia media) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => _ChatImageViewer(url: media.url)),
     );
   }
 

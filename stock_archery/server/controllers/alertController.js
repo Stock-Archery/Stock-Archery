@@ -12,10 +12,15 @@ exports.getAlertsByCategory = async (req, res) => {
   try {
     // Only serve alerts from the last 7 days — older alerts are hidden from the app.
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    // imageFileId is internal (the admin server uses it to delete the image
+    // from ImageKit), so it isn't sent to the app. Clients show `imageUrl`
+    // and fall back to the legacy `imageBase64` on posts not yet migrated.
     const alerts = await AlertPost.find({
       category,
       createdAt: { $gte: sevenDaysAgo },
-    }).sort({ createdAt: -1 });
+    })
+      .select('-imageFileId')
+      .sort({ createdAt: -1 });
     res.json(alerts);
   } catch (err) {
     console.error('Error fetching alerts:', err.message);

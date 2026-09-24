@@ -3,8 +3,52 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../models/alert_post.dart';
 import '../viewmodels/alert_viewmodel.dart';
 import '../services/notification_service.dart';
+
+/// Thumbnail in the "Previous Posts" list. New posts load a small resized
+/// copy from ImageKit; older posts still carry base64 and decode it.
+class _AlertThumbnail extends StatelessWidget {
+  final AlertPost alert;
+
+  const _AlertThumbnail({required this.alert});
+
+  static const double _height = 150;
+
+  @override
+  Widget build(BuildContext context) {
+    if (alert.hasImageUrl) {
+      return Image.network(
+        alert.thumbnailUrl()!,
+        fit: BoxFit.fitWidth,
+        width: double.infinity,
+        height: _height,
+        loadingBuilder: (context, child, progress) => progress == null
+            ? child
+            : const SizedBox(
+                height: _height,
+                child: Center(
+                  child: CircularProgressIndicator(color: Color(0xFF6366F1), strokeWidth: 2),
+                ),
+              ),
+        errorBuilder: (context, error, stack) => const SizedBox(
+          height: _height,
+          child: Center(
+            child: Icon(Icons.broken_image_outlined, color: Colors.white38, size: 32),
+          ),
+        ),
+      );
+    }
+
+    return Image.memory(
+      base64Decode(alert.imageBase64!),
+      fit: BoxFit.fitWidth,
+      width: double.infinity,
+      height: _height,
+    );
+  }
+}
 
 class AlertSendPage extends StatefulWidget {
   const AlertSendPage({super.key});
@@ -308,12 +352,16 @@ class _AlertSendPageState extends State<AlertSendPage> {
                               );
                             }
 
-                            _messageController.clear();
+                            // Keep what was typed if the send failed, so the
+                            // admin can simply retry.
+                            if (success && mounted) _messageController.clear();
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    success ? 'Alert sent successfully!' : 'Failed to send alert',
+                                    success
+                                        ? 'Alert sent successfully!'
+                                        : (viewModel.lastError ?? 'Failed to send alert'),
                                   ),
                                   backgroundColor: success ? Colors.green : Colors.red,
                                 ),
@@ -385,17 +433,12 @@ class _AlertSendPageState extends State<AlertSendPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (alert.imageBase64 != null && alert.imageBase64!.isNotEmpty)
+                            if (alert.hasImage)
                               ClipRRect(
                                 borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(16),
                                 ),
-                                child: Image.memory(
-                                  base64Decode(alert.imageBase64!),
-                                  fit: BoxFit.fitWidth,
-                                  width: double.infinity,
-                                  height: 150,
-                                ),
+                                child: _AlertThumbnail(alert: alert),
                               ),
                             Padding(
                               padding: const EdgeInsets.all(12),
