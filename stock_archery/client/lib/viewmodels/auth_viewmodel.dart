@@ -13,6 +13,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:io' show Platform;
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'session_provider.dart';
 import 'chat_viewmodel.dart';
 
@@ -61,93 +62,196 @@ class AuthViewModel extends StateNotifier<AuthState> {
   final Ref _ref;
   StreamSubscription<DatabaseEvent>? _alertsSubscription; // Subscription for real-time alert updates
 
+  /// Tracks whether a genuine logout/forceLogout has been called in this session.
+  /// This is the ONLY way user: null should be set — never from a stale stream event.
+  bool _logoutWasExplicit = false;
+
   AuthViewModel(this._authService, this._ref) : super(AuthState(isInitializing: true)) {
+    _initAuth();
+  }
+
+  /// TWO-LAYER AUTH INITIALIZATION:
+  /// Layer 1: Load cached UserModel from disk IMMEDIATELY → instant logged-in UI.
+  /// Layer 2: Set up Firebase Auth stream for validation/sync in the background.
+  ///
+  /// WHY: On some Android 13+ devices (e.g. Moto G73 5G), Firebase Auth's
+  /// authStateChanges stream fires null FIRST on cold start (before the native
+  /// SDK finishes reading its persisted token from encrypted storage), then fires
+  /// the real user a moment later. If we rely solely on that stream, the first
+  /// null event nukes the user to LoginView — causing the "silent logout on tab
+  /// removal" bug. The cached profile protects against this race.
+  Future<void> _initAuth() async {
+    if (!_authService.isFirebaseAvailable) {
+      state = state.copyWith(isInitializing: false);
+      return;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // LAYER 1: Load cached profile from SharedPreferences (instant, no network)
+    // ──────────────────────────────────────────────────────────────────────────
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString('cached_user_profile');
+      if (cachedJson != null) {
+        final cachedUser = UserModel.fromJson(jsonDecode(cachedJson));
+        // Set user immediately so AuthWrapper shows MainScreen, not LoginView
+        state = AuthState(user: cachedUser, isInitializing: false);
+        debugPrint('[AuthViewModel] ✓ Layer 1: Cached user loaded instantly → ${cachedUser.email}');
+      }
+    } catch (e) {
+      debugPrint('[AuthViewModel] ⚠️ Layer 1: Cache read error (non-fatal): $e');
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // LAYER 2: Firebase Auth stream for ongoing validation and profile sync
+    // ──────────────────────────────────────────────────────────────────────────
     _listenToAuthChanges();
   }
 
   void _listenToAuthChanges() {
-    if (_authService.isFirebaseAvailable) {
-      _authService.authStateChanges.listen((firebaseUser) async {
-        if (firebaseUser == null) {
-          _cancelAlertsSubscription(); // Cancel listener on logout
-          _resetChatState(); // Don't leak the previous account's chat history
+    _authService.authStateChanges.listen((firebaseUser) async {
+      if (firebaseUser == null) {
+        // ────────────────────────────────────────────────────────────────────
+        // Firebase Auth says: "no user signed in"
+        //
+        // This can happen for TWO reasons:
+        //   A) GENUINE LOGOUT: logout() or forceLogout() was called in this session.
+        //      In that case, _logoutWasExplicit == true AND cached_user_profile
+        //      has ALREADY been deleted by logout/forceLogout.
+        //   B) DEVICE BUG / COLD START RACE: On Android 13+ devices, the stream
+        //      fires null before the native SDK finishes reading persisted auth from
+        //      encrypted storage. The user IS logged in, but the stream doesn't know yet.
+        //
+        // We distinguish A from B by checking _logoutWasExplicit and the cache.
+        // ────────────────────────────────────────────────────────────────────
+
+        if (_logoutWasExplicit) {
+          // Case A: Genuine logout — cache was already cleared by logout/forceLogout.
+          _cancelAlertsSubscription();
+          _resetChatState();
+          _logoutWasExplicit = false; // Reset the flag
           state = AuthState(user: null, isInitializing: false);
-        } else {
-          // If a firebase session already exists, sync with backend to get MongoDB profile
-          try {
-            state = state.copyWith(isLoading: true, clearError: true);
-            final idToken = await firebaseUser.getIdToken() ?? '';
+          debugPrint('[AuthViewModel] ✓ Genuine logout confirmed via stream.');
+          return;
+        }
 
-            // Print the ID Token for debugging
-            debugPrint(
-              '\n================ FIREBASE ID TOKEN (BEARER TOKEN) ================',
-            );
-            debugPrint(idToken);
-            debugPrint(
-              '==================================================================\n',
-            );
+        // Case B check: Is there still a cached profile?
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final hasCachedProfile = prefs.getString('cached_user_profile') != null;
 
-            // Sync with backend using current token
-            final response = await _authService.syncProfile(idToken);
+          if (hasCachedProfile) {
+            // Cache exists but Firebase Auth says null. This is the cold-start race condition.
+            // Do NOT wipe the user. Keep the cached user active.
+            debugPrint('[AuthViewModel] ⚠️ Firebase Auth fired null but cached profile exists → cold-start race. Preserving session.');
+            state = state.copyWith(isInitializing: false);
+            return;
+          }
+        } catch (_) {}
 
-            state = AuthState(user: response, isLoading: false, isInitializing: false);
+        // No cache AND no explicit logout → first launch or cleared data. Show login.
+        _cancelAlertsSubscription();
+        _resetChatState();
+        state = AuthState(user: null, isInitializing: false);
+        debugPrint('[AuthViewModel] ℹ️ No cached profile, no explicit logout. Showing login screen.');
 
-            // Start listening to real-time premium updates from Firebase Realtime Database
-            _listenToAlertAccessChanges(firebaseUser.uid);
-
-            // Register FCM token now that user is synced
-            try {
-              final token = await FirebaseMessaging.instance.getToken();
-              if (token != null) {
-                // Subscribe to global topic for broadcast notifications
-                await FirebaseMessaging.instance.subscribeToTopic('all_users');
-                debugPrint('Subscribed to all_users topic.');
-
-                final deviceInfo = DeviceInfoPlugin();
-                String deviceId = 'unknown_device';
-                String platform = 'unknown';
-
-                if (Platform.isAndroid) {
-                  final info = await deviceInfo.androidInfo;
-                  deviceId = info.id;
-                  platform = 'android';
-                } else if (Platform.isIOS) {
-                  final info = await deviceInfo.iosInfo;
-                  deviceId = info.identifierForVendor ?? 'unknown_ios';
-                  platform = 'ios';
-                }
-
-                final apiUrl = AppConfig.baseUrl;
-                await http.post(
-                  Uri.parse('$apiUrl/user/device/register'),
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer $idToken',
-                  },
-                  body: jsonEncode({
-                    'token': token,
-                    'deviceId': deviceId,
-                    'platform': platform,
-                  }),
-                );
-                debugPrint('Registered FCM token post-sync.');
-              }
-            } catch (e) {
-              debugPrint('Post-sync token registration failed: $e');
-            }
-          } catch (e) {
-            state = AuthState(
-              user: null,
-              isLoading: false,
+      } else {
+        // ────────────────────────────────────────────────────────────────────
+        // Firebase Auth says: "user is signed in" → sync profile in background
+        // ────────────────────────────────────────────────────────────────────
+        try {
+          // If user was already loaded from cache (Layer 1), just sync in background.
+          // If not yet loaded, set a fallback user so UI shows MainScreen.
+          if (state.user == null) {
+            state = state.copyWith(
+              user: UserModel(
+                firebaseUid: firebaseUser.uid,
+                name: firebaseUser.displayName ?? '',
+                email: firebaseUser.email ?? '',
+                phoneNumber: firebaseUser.phoneNumber ?? '',
+                state: '',
+                isPremium: false,
+              ),
               isInitializing: false,
-              errorMessage: "Failed to sync profile: ${e.toString()}",
             );
           }
+
+          final idToken = await firebaseUser.getIdToken() ?? '';
+
+          // Print the ID Token for debugging
+          debugPrint(
+            '\n================ FIREBASE ID TOKEN (BEARER TOKEN) ================',
+          );
+          debugPrint(idToken);
+          debugPrint(
+            '==================================================================\n',
+          );
+
+          // Sync with backend using current token (non-fatal on failure)
+          try {
+            final response = await _authService.syncProfile(idToken);
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('cached_user_profile', jsonEncode(response.toJson()));
+            state = AuthState(user: response, isLoading: false, isInitializing: false);
+          } catch (syncError) {
+            debugPrint('[AuthViewModel] ⚠️ Backend profile sync warning (offline or server waking up): $syncError');
+            // User is authenticated in Firebase Auth. Keep session active with cached/fallback user.
+            state = state.copyWith(isLoading: false, isInitializing: false);
+          }
+
+          // Start listening to real-time premium updates from Firebase Realtime Database
+          _listenToAlertAccessChanges(firebaseUser.uid);
+
+          // Register FCM token now that user is synced
+          try {
+            final token = await FirebaseMessaging.instance.getToken();
+            if (token != null) {
+              // Subscribe to global topic for broadcast notifications
+              await FirebaseMessaging.instance.subscribeToTopic('all_users');
+              debugPrint('Subscribed to all_users topic.');
+
+              final deviceInfo = DeviceInfoPlugin();
+              String deviceId = 'unknown_device';
+              String platform = 'unknown';
+
+              if (Platform.isAndroid) {
+                final info = await deviceInfo.androidInfo;
+                deviceId = info.id;
+                platform = 'android';
+              } else if (Platform.isIOS) {
+                final info = await deviceInfo.iosInfo;
+                deviceId = info.identifierForVendor ?? 'unknown_ios';
+                platform = 'ios';
+              }
+
+              final apiUrl = AppConfig.baseUrl;
+              await http.post(
+                Uri.parse('$apiUrl/user/device/register'),
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer $idToken',
+                },
+                body: jsonEncode({
+                  'token': token,
+                  'deviceId': deviceId,
+                  'platform': platform,
+                }),
+              );
+              debugPrint('Registered FCM token post-sync.');
+            }
+          } catch (e) {
+            debugPrint('Post-sync token registration failed: $e');
+          }
+        } catch (e) {
+          debugPrint('[AuthViewModel] ❌ Error in auth state handler: $e');
+          // Keep existing user (from cache) — don't nuke to null.
+          state = state.copyWith(
+            isLoading: false,
+            isInitializing: false,
+          );
         }
-      });
-    } else {
-      state = state.copyWith(isInitializing: false);
-    }
+      }
+    });
   }
 
   /// Request SMS OTP for a phone number
@@ -235,6 +339,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
         debugPrint('[log] [AuthViewModel] FCM registration failed: $e');
       }
 
+      // Save profile to local storage for cold-start resilience
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('cached_user_profile', jsonEncode(user.toJson()));
+      } catch (_) {}
+
       state = AuthState(user: user, isLoading: false);
       return true;
     } catch (e) {
@@ -278,6 +388,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
       );
       await _ref.read(sessionServiceProvider).saveNewSession(user.firebaseUid);
 
+      // Save profile to local storage for cold-start resilience
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('cached_user_profile', jsonEncode(user.toJson()));
+      } catch (_) {}
+
       //revenue cat me user registered
       await Purchases.logIn(user.firebaseUid);
 
@@ -306,6 +422,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
       );
       await _ref.read(sessionServiceProvider).saveNewSession(user.firebaseUid);
 
+      // Save profile to local storage for cold-start resilience
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('cached_user_profile', jsonEncode(user.toJson()));
+      } catch (_) {}
+
       //revenue cat me register ho gya user
       await Purchases.logIn(user.firebaseUid);
 
@@ -329,9 +451,16 @@ class AuthViewModel extends StateNotifier<AuthState> {
     _cancelAlertsSubscription(); // Cancel real-time subscription on logout
     _resetChatState(); // Don't leak this account's chat history into the next login
 
-    // Clear local session ID from shared preferences
+    // Clear local session ID and cached profile from shared preferences
     await _ref.read(sessionServiceProvider).clearLocalSession();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('cached_user_profile');
+    } catch (_) {}
 
+    // Mark as explicit logout BEFORE signOut so the authStateChanges null handler
+    // knows this is a genuine logout (not a cold-start device race).
+    _logoutWasExplicit = true;
     await _authService.logout();
 
     //revenue cat se logout
@@ -348,6 +477,14 @@ class AuthViewModel extends StateNotifier<AuthState> {
     );
     _cancelAlertsSubscription(); // Cancel real-time subscription on logout
     _resetChatState(); // Don't leak this account's chat history into the next login
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('cached_user_profile');
+    } catch (_) {}
+
+    // Mark as explicit logout BEFORE signOut so the authStateChanges null handler
+    // knows this is a genuine logout (not a cold-start device race).
+    _logoutWasExplicit = true;
     await _authService.logout();
 
     //revenue cat se logout
@@ -375,6 +512,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
       try {
         final idToken = await FirebaseAuth.instance.currentUser!.getIdToken() ?? '';
         final response = await _authService.syncProfile(idToken);
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('cached_user_profile', jsonEncode(response.toJson()));
+        } catch (_) {}
         state = state.copyWith(user: response);
       } catch (e) {
         debugPrint('[AuthViewModel] Manual sync failed: $e');

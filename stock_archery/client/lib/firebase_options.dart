@@ -44,6 +44,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '913763493698',
     projectId: 'stock-archery-99',
     authDomain: 'stock-archery-99.firebaseapp.com',
+    databaseURL: 'https://stock-archery-99-default-rtdb.firebaseio.com',
     storageBucket: 'stock-archery-99.firebasestorage.app',
   );
 
@@ -52,6 +53,7 @@ class DefaultFirebaseOptions {
     appId: '1:913763493698:android:eec65068435af538064adb',
     messagingSenderId: '913763493698',
     projectId: 'stock-archery-99',
+    databaseURL: 'https://stock-archery-99-default-rtdb.firebaseio.com',
     storageBucket: 'stock-archery-99.firebasestorage.app',
   );
 
@@ -60,6 +62,7 @@ class DefaultFirebaseOptions {
     appId: '1:913763493698:ios:a184ba42d5426352064adb',
     messagingSenderId: '913763493698',
     projectId: 'stock-archery-99',
+    databaseURL: 'https://stock-archery-99-default-rtdb.firebaseio.com',
     storageBucket: 'stock-archery-99.firebasestorage.app',
     iosBundleId: 'com.stockarchery.app',
   );
@@ -69,6 +72,7 @@ class DefaultFirebaseOptions {
     appId: '1:913763493698:ios:975cd44dc08e8f69064adb',
     messagingSenderId: '913763493698',
     projectId: 'stock-archery-99',
+    databaseURL: 'https://stock-archery-99-default-rtdb.firebaseio.com',
     storageBucket: 'stock-archery-99.firebasestorage.app',
     iosBundleId: 'com.example.client',
   );
@@ -79,6 +83,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '913763493698',
     projectId: 'stock-archery-99',
     authDomain: 'stock-archery-99.firebaseapp.com',
+    databaseURL: 'https://stock-archery-99-default-rtdb.firebaseio.com',
     storageBucket: 'stock-archery-99.firebasestorage.app',
   );
 
