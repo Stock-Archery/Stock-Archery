@@ -5,9 +5,21 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service responsible for managing active session tokens (session IDs)
-/// locally (SharedPreferences) and remotely (Firebase Realtime Database).
+/// locally (in-memory + SharedPreferences) and remotely (Firebase Realtime Database).
 class SessionService {
   StreamSubscription<DatabaseEvent>? _sessionSubscription;
+
+  /// In-memory cache of the currently active session ID for instantaneous reads
+  /// without waiting for asynchronous SharedPreferences disk I/O.
+  String? _currentLocalSessionId;
+
+  /// Mutex/Lock flag indicating an active login or session generation is in progress.
+  /// Prevents any race condition where an auth state change listener executes
+  /// startup/stream checks before the new session is fully written.
+  bool _isRegisteringSession = false;
+
+  /// Currently monitored Firebase UID to prevent duplicate listener setup
+  String? _currentMonitoredUid;
 
   /// Helper to check if Firebase is initialized.
   /// Bypasses database operations if Firebase is not configured (mock mode).
@@ -20,11 +32,14 @@ class SessionService {
   }
 
   /// Generates a new session ID based on current timestamp,
-  /// saves it locally, and updates it in Firebase Realtime Database.
+  /// saves it locally (memory + SharedPreferences), and updates it in Firebase Realtime Database.
   /// 
   /// This is called during explicit user login or user registration.
   Future<String?> saveNewSession(String uid) async {
     final newSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+    _isRegisteringSession = true;
+    _currentLocalSessionId = newSessionId;
+
     debugPrint('================ [SessionService] GENERATING NEW SESSION ================');
     debugPrint('User UID: $uid');
     debugPrint('New Session ID: $newSessionId');
@@ -33,20 +48,12 @@ class SessionService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('my_local_session', newSessionId);
-      debugPrint('[SessionService] Saved session ID locally in SharedPreferences.');
+      debugPrint('[SessionService] ✓ Saved session ID locally in SharedPreferences.');
     } catch (e) {
       debugPrint('[SessionService] ❌ Error saving session ID locally: $e');
     }
 
     // 2. Save remotely to Firebase Realtime Database
-    //
-    // If this write silently fails (transient network blip right after
-    // login) while the local SharedPreferences write above already
-    // succeeded, `active_sessions/{uid}` in RTDB is left holding an OLDER
-    // session id. The next time the app opens on this SAME device,
-    // checkAndListenToSession() sees local != remote and force-logs the
-    // user out, even though no other device was ever involved. Retrying a
-    // few times here closes that window.
     if (_isFirebaseAvailable) {
       final ref = FirebaseDatabase.instance.ref("active_sessions/$uid");
       const maxAttempts = 3;
@@ -56,14 +63,14 @@ class SessionService {
             "device_id": newSessionId,
             "last_updated": ServerValue.timestamp,
           });
-          debugPrint('[SessionService] Registered session ID successfully in Firebase RTDB.');
+          debugPrint('[SessionService] ✓ Registered session ID successfully in Firebase RTDB.');
           break;
         } catch (e) {
           debugPrint('[SessionService] ❌ Error writing session ID to Firebase RTDB (attempt $attempt/$maxAttempts): $e');
           if (attempt == maxAttempts) {
-            debugPrint('[SessionService] ⚠️ Giving up on RTDB session write after $maxAttempts attempts — local/remote session may now be out of sync.');
+            debugPrint('[SessionService] ⚠️ RTDB write reached max attempts.');
           } else {
-            await Future.delayed(Duration(milliseconds: 500 * attempt));
+            await Future.delayed(Duration(milliseconds: 300 * attempt));
           }
         }
       }
@@ -71,16 +78,31 @@ class SessionService {
       debugPrint('[SessionService] ⚠️ Firebase not available. Skipping Realtime Database write.');
     }
     
+    // Unlock after write finishes
+    _isRegisteringSession = false;
     debugPrint('========================================================================');
     return newSessionId;
   }
 
   /// Initial check to compare local session with database session.
   /// Registers a real-time listener if they match.
-  /// Triggers [onKickOut] if there is a mismatch.
+  /// Triggers [onKickOut] if there is a verified remote mismatch.
   Future<void> checkAndListenToSession(String uid, VoidCallback onKickOut) async {
-    // Prevent duplicate listeners
+    // If we are currently in the middle of generating/saving a new session, skip check to prevent race condition
+    if (_isRegisteringSession) {
+      debugPrint('[SessionService] Active session registration in progress. Skipping premature kick-out check.');
+      return;
+    }
+
+    // If already monitoring this exact user and listener is active, avoid teardown-recreation churn
+    if (_currentMonitoredUid == uid && _sessionSubscription != null) {
+      debugPrint('[SessionService] Session monitor already active for UID: $uid');
+      return;
+    }
+
+    // Cancel any previous user's subscription
     await cancelListener();
+    _currentMonitoredUid = uid;
 
     if (!_isFirebaseAvailable) {
       debugPrint('[SessionService] ⚠️ Firebase unavailable. Bypassing session listener.');
@@ -92,8 +114,13 @@ class SessionService {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final localSessionId = prefs.getString('my_local_session');
-      debugPrint('[SessionService] Local Session ID: $localSessionId');
+      
+      // Read local session ID from memory cache first, then SharedPreferences
+      var localSessionId = _currentLocalSessionId ?? prefs.getString('my_local_session');
+      if (localSessionId != null) {
+        _currentLocalSessionId = localSessionId;
+      }
+      debugPrint('[SessionService] Initial Local Session ID: $localSessionId');
 
       final ref = FirebaseDatabase.instance.ref("active_sessions/$uid");
       
@@ -106,9 +133,12 @@ class SessionService {
 
         // Check if there is a mismatch (meaning another device logged in while this app was closed)
         if (localSessionId != null && databaseSessionId != null && databaseSessionId != localSessionId) {
-          debugPrint('[SessionService] 🚨 STARTUP MISMATCH: Account active on another device! Initiating kick-out.');
-          onKickOut();
-          return;
+          // Verify we aren't currently in the middle of registering a new session on this device
+          if (!_isRegisteringSession && _currentLocalSessionId != databaseSessionId) {
+            debugPrint('[SessionService] 🚨 STARTUP MISMATCH: Account active on another device! Initiating kick-out.');
+            onKickOut();
+            return;
+          }
         }
       } else {
         debugPrint('[SessionService] No session found in DB. First device login or DB empty.');
@@ -117,18 +147,23 @@ class SessionService {
       // Start Realtime Database listener to catch session invalidations in real-time
       debugPrint('[SessionService] Registering active listener to Firebase path: active_sessions/$uid');
       _sessionSubscription = ref.onValue.listen((DatabaseEvent event) async {
+        if (_isRegisteringSession) {
+          return; // Ignore updates caused by our own local login in progress
+        }
+
         if (event.snapshot.value != null) {
           final Map<dynamic, dynamic> data = event.snapshot.value as Map<dynamic, dynamic>;
           final databaseSessionId = data['device_id']?.toString();
           
-          // Fetch local session ID again in case it was updated on this device
-          final currentLocalSession = prefs.getString('my_local_session');
+          final currentLocalSession = _currentLocalSessionId ?? prefs.getString('my_local_session');
 
           debugPrint('[SessionService] RTDB Update - DB Session: $databaseSessionId, Local Session: $currentLocalSession');
 
           if (databaseSessionId != null && currentLocalSession != null && databaseSessionId != currentLocalSession) {
-            debugPrint('[SessionService] 🚨 REALTIME MISMATCH: Session ID changed remotely. Initiating kick-out.');
-            onKickOut();
+            if (!_isRegisteringSession) {
+              debugPrint('[SessionService] 🚨 REALTIME MISMATCH: Session ID changed remotely. Initiating kick-out.');
+              onKickOut();
+            }
           }
         }
       }, onError: (error) {
@@ -140,11 +175,13 @@ class SessionService {
     debugPrint('=============================================================================');
   }
 
-  /// Retrieve local session ID
+  /// Retrieve local session ID (from memory cache or SharedPreferences)
   Future<String?> getLocalSession() async {
+    if (_currentLocalSessionId != null) return _currentLocalSessionId;
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('my_local_session');
+      _currentLocalSessionId = prefs.getString('my_local_session');
+      return _currentLocalSessionId;
     } catch (e) {
       debugPrint('[SessionService] ❌ Error reading local session: $e');
       return null;
@@ -153,10 +190,13 @@ class SessionService {
 
   /// Remove local session ID (used on user logouts)
   Future<void> clearLocalSession() async {
+    _currentLocalSessionId = null;
+    _currentMonitoredUid = null;
+    _isRegisteringSession = false;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('my_local_session');
-      debugPrint('[SessionService] Local session cleared from SharedPreferences.');
+      debugPrint('[SessionService] Local session cleared from memory and SharedPreferences.');
     } catch (e) {
       debugPrint('[SessionService] ❌ Error clearing local session: $e');
     }
@@ -164,6 +204,7 @@ class SessionService {
 
   /// Cancel RTDB session subscription
   Future<void> cancelListener() async {
+    _currentMonitoredUid = null;
     if (_sessionSubscription != null) {
       await _sessionSubscription!.cancel();
       _sessionSubscription = null;

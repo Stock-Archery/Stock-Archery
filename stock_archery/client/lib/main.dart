@@ -79,6 +79,19 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
+    // Print Firebase ID Token on auth / token state changes
+    FirebaseAuth.instance.idTokenChanges().listen((User? user) async {
+      if (user != null) {
+        final idToken = await user.getIdToken();
+        debugPrint('═══════════════════════════════════════════════════════');
+        debugPrint('🔥 FIREBASE ID TOKEN for [${user.email ?? user.uid}]:');
+        debugPrint(idToken);
+        debugPrint('═══════════════════════════════════════════════════════');
+      } else {
+        debugPrint('ℹ️ Firebase Auth: No user signed in.');
+      }
+    });
   } catch (error, stackTrace) {
     debugPrint('Warning: Firebase could not be initialized: $error');
     debugPrint('$stackTrace');

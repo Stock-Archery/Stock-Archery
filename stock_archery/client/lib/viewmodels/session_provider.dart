@@ -15,15 +15,16 @@ final sessionServiceProvider = Provider<SessionService>((ref) {
 /// If a user logs out, it cancels the Realtime Database listener.
 final sessionProvider = Provider<void>((ref) {
   final sessionService = ref.watch(sessionServiceProvider);
-  final authState = ref.watch(authProvider);
-  final user = authState.user;
+  // Selectively watch only the firebaseUid to avoid tearing down/re-creating
+  // the session listener on non-auth state changes (e.g. alert access, chat count, errors)
+  final firebaseUid = ref.watch(authProvider.select((s) => s.user?.firebaseUid));
 
-  if (user != null) {
-    debugPrint('[SessionProvider] User logged in: ${user.name} (${user.email}). Starting active session monitor.');
+  if (firebaseUid != null && firebaseUid.isNotEmpty) {
+    debugPrint('[SessionProvider] Active user UID: $firebaseUid. Starting active session monitor.');
     
     // We execute the check asynchronously to prevent triggering layout/build cycle warnings in Riverpod
     Future.microtask(() async {
-      await sessionService.checkAndListenToSession(user.firebaseUid, () async {
+      await sessionService.checkAndListenToSession(firebaseUid, () async {
         debugPrint('[SessionProvider] 🚨 Forceful kick-out triggered! Clearing local session and executing forceLogout().');
         
         // 1. Terminate listener and delete session token locally

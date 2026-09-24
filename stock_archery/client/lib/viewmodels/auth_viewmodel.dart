@@ -78,7 +78,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
             state = state.copyWith(isLoading: true, clearError: true);
             final idToken = await firebaseUser.getIdToken() ?? '';
 
-            // Print the ID Token so you can use it in Postman
+            // Print the ID Token for debugging
             debugPrint(
               '\n================ FIREBASE ID TOKEN (BEARER TOKEN) ================',
             );
