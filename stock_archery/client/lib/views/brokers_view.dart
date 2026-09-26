@@ -206,6 +206,18 @@ class _BrokersViewState extends State<BrokersView> {
                 ),
               ] else if (_selectedCategory == 'XAUD') ...[
                 _buildBrokerCard(
+                  name: "XM",
+                  logoAsset: "assets/logos/xm.jpg",
+                  description:
+                      "Global multi-asset broker with tight spreads & fast execution.",
+                  color: const Color(0xFFCC0000),
+                  isPopular: true,
+                  isWide: true,
+                  onTap: () => _launchUrl("https://affs.click/kv3W7"),
+                  onVerifyTap: () =>
+                      _launchUrl("https://forms.gle/dKjcY2FPy534AC2o7"),
+                ),
+                _buildBrokerCard(
                   name: "Angel One",
                   logoAsset: "assets/logos/angelone.png",
                   description: "Intelligent trading with ARQ Prime advisory.",
@@ -256,7 +268,7 @@ class _BrokersViewState extends State<BrokersView> {
       {
         "icon": Icons.account_balance_wallet_outlined,
         "title": "Add Funds",
-        "desc": "Add min ₹100 and execute first trade within 7 days.",
+        "desc": "Add min ₹10000 and execute first trade within 7 days.",
       },
       {
         "icon": Icons.crop_free_outlined,

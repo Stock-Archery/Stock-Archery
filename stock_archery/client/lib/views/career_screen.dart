@@ -173,15 +173,7 @@ class _Heading extends StatelessWidget {
 
 class _Card extends StatelessWidget {
   final Widget child;
-  final Color? backgroundColor;
-  final Color? borderColor;
-  final double borderWidth;
-  const _Card({
-    required this.child,
-    this.backgroundColor,
-    this.borderColor,
-    this.borderWidth = 1,
-  });
+  const _Card({required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -189,12 +181,9 @@ class _Card extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppColors.card,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: borderColor ?? AppColors.cardBorder,
-          width: borderWidth,
-        ),
+        border: Border.all(color: AppColors.cardBorder, width: 1),
       ),
       child: child,
     );
@@ -318,7 +307,7 @@ class _HeroSection extends StatelessWidget {
               fontFamily: 'serif',
             ),
             children: [
-              TextSpan(text: 'Join Bihar\'s Premier '),
+              TextSpan(text: 'Join Bihar\'s Premium '),
               TextSpan(
                 text: 'Trading Floor',
                 style: TextStyle(
@@ -342,7 +331,7 @@ class _HeroSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 28),
-        const _CandleChart(),
+        const _TradingFloorProof(),
         const SizedBox(height: 28),
         _GoldButton(text: 'Reserve Your Seat', onTap: onFormTap),
         const SizedBox(height: 12),
@@ -352,88 +341,239 @@ class _HeroSection extends StatelessWidget {
   }
 }
 
-class _CandleChart extends StatelessWidget {
-  const _CandleChart();
+// ----------------------------------------------------------------------
+// Social-proof photo — Trading Floor Collage
+// ----------------------------------------------------------------------
+
+class _TradingFloorProof extends StatelessWidget {
+  const _TradingFloorProof();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 90,
-      width: double.infinity,
-      child: CustomPaint(painter: _CandlePainter()),
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.30),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gold.withValues(alpha: 0.12),
+            blurRadius: 28,
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.55),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // ── Actual photo ──────────────────────────────────────────────
+          AspectRatio(
+            aspectRatio: 1024 / 860, // matches the collage proportions
+            child: Image.asset(
+              'assets/images/trading_floor_collage.jpg',
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          // ── Gradient veil — bottom-to-top, keeps text readable ───────
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.45, 0.72, 1.0],
+                  colors: [
+                    Colors.transparent,
+                    AppColors.bg.withValues(alpha: 0.55),
+                    AppColors.bg.withValues(alpha: 0.92),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Top-left: LIVE badge ──────────────────────────────────────
+          Positioned(
+            top: 12,
+            left: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.green.withValues(alpha: 0.6),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: AppColors.green,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Real Classroom · Bhagalpur',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Bottom caption row ────────────────────────────────────────
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Caption headline
+                  const Text(
+                    'Learn on a Real Trading Floor',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Live screens · Expert mentors · Peer learning environment',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 11.5,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Trust stat chips
+                  Row(
+                    children: [
+                      _StatChip(
+                        icon: Icons.people_alt_outlined,
+                        label: '200+ Students',
+                      ),
+                      const SizedBox(width: 8),
+                      _StatChip(
+                        icon: Icons.star_rounded,
+                        label: '4.9 Rating',
+                        isGold: true,
+                      ),
+                      const SizedBox(width: 8),
+                      _StatChip(
+                        icon: Icons.verified_rounded,
+                        label: 'Since 2021',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _CandlePainter extends CustomPainter {
-  final List<double> heights = const [
-    0.28,
-    0.42,
-    0.22,
-    0.48,
-    0.32,
-    0.58,
-    0.26,
-    0.46,
-    0.54,
-    0.38,
-  ];
-  final List<bool> isUp = const [
-    true,
-    false,
-    true,
-    false,
-    true,
-    false,
-    true,
-    false,
-    true,
-    false,
-  ];
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isGold;
+
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    this.isGold = false,
+  });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final n = heights.length;
-    final gap = size.width / n;
-    final baseline = size.height * 0.72;
-
-    final linePaint = Paint()
-      ..color = AppColors.cardBorder
-      ..strokeWidth = 1;
-    canvas.drawLine(
-      Offset(0, baseline),
-      Offset(size.width, baseline),
-      linePaint,
+  Widget build(BuildContext context) {
+    final color = isGold ? AppColors.gold : Colors.white70;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isGold
+              ? AppColors.gold.withValues(alpha: 0.45)
+              : Colors.white.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 12),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
-
-    for (int i = 0; i < n; i++) {
-      final x = gap * i + gap / 2;
-      final h = heights[i] * size.height;
-      final color = isUp[i] ? AppColors.green : AppColors.red;
-      final paint = Paint()
-        ..color = color
-        ..strokeWidth = 4
-        ..strokeCap = StrokeCap.round;
-      if (isUp[i]) {
-        canvas.drawLine(Offset(x, baseline), Offset(x, baseline - h), paint);
-      } else {
-        canvas.drawLine(Offset(x, baseline), Offset(x, baseline + h), paint);
-      }
-    }
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ----------------------------------------------------------------------
 // Section 2 — Roadmap
 // ----------------------------------------------------------------------
 
+class _ScheduleTopic {
+  final String title;
+  final List<String> bulletPoints;
+
+  const _ScheduleTopic({required this.title, this.bulletPoints = const []});
+}
+
 class _WeekData {
   final String title;
   final String description;
-  const _WeekData(this.title, this.description);
+  final String? scheduleHeader;
+  final List<_ScheduleTopic>? scheduleTopics;
+  final String? footerNote;
+  final String? watermarkNumber;
+
+  const _WeekData({
+    required this.title,
+    required this.description,
+    this.scheduleHeader,
+    this.scheduleTopics,
+    this.footerNote,
+    this.watermarkNumber,
+  });
 }
 
 class _RoadmapSection extends StatelessWidget {
@@ -441,19 +581,98 @@ class _RoadmapSection extends StatelessWidget {
 
   static const List<_WeekData> weeks = [
     _WeekData(
-      'Week 1',
-      'Foundation phase — an introduction to the trading floor environment '
+      title: 'Week 1',
+      description:
+          'Foundation phase — an introduction to the trading floor environment '
           'and core fundamentals.',
+      scheduleHeader: "What we'll Learn in the 1ˢᵗ week",
+      watermarkNumber: '01',
+      scheduleTopics: [
+        _ScheduleTopic(
+          title: 'Introduction',
+          bulletPoints: ['Price Action', 'Risk Management'],
+        ),
+        _ScheduleTopic(title: '30-TF Intraday Strategy', bulletPoints: []),
+        _ScheduleTopic(
+          title: 'FNO Pathshala',
+          bulletPoints: [
+            'Introduction to FNO',
+            'Option Buying vs Option Selling',
+            'Option Greeks',
+            'OI – Data Reading',
+          ],
+        ),
+        _ScheduleTopic(
+          title: 'Crypto Class',
+          bulletPoints: [
+            'Introduction Class',
+            'Move over to CoinMarketCap',
+            'Leverage Understanding',
+            'Token Selection',
+          ],
+        ),
+      ],
     ),
     _WeekData(
-      'Week 2',
-      'Deepening core concepts through guided, hands-on practice.',
+      title: 'Week 2',
+      description: 'Deepening core concepts through guided, hands-on practice.',
+      scheduleHeader: "What we'll Learn in the 2ⁿᵈ week",
+      watermarkNumber: '02',
+      scheduleTopics: [
+        _ScheduleTopic(title: 'SOB Strategy', bulletPoints: []),
+        _ScheduleTopic(title: 'Live Trade Deployment', bulletPoints: []),
+        _ScheduleTopic(
+          title:
+              'Introduction to Nifty / Sensex Option Selling & Hedging Strategy',
+          bulletPoints: [
+            'Short Iron Condor',
+            'Expiry Special DTE-1 Strategy',
+            'Directional Spreads',
+          ],
+        ),
+        _ScheduleTopic(
+          title: 'Forex Special',
+          bulletPoints: ['XAUT & XAG 15-min Strategy', 'Practice Session'],
+        ),
+      ],
     ),
     _WeekData(
-      'Week 3',
-      'Live trading floor practice and strategy development.',
+      title: 'Week 3',
+      description: 'Live trading floor practice and strategy development.',
+      scheduleHeader: "What we'll Learn in the 3ʳᵈ week",
+      watermarkNumber: '03',
+      scheduleTopics: [
+        _ScheduleTopic(
+          title: 'Live Trading + Doubts Clearing Session',
+          bulletPoints: [],
+        ),
+        _ScheduleTopic(title: 'Algo Integration', bulletPoints: []),
+        _ScheduleTopic(title: 'Advance Arbitrage Trading', bulletPoints: []),
+      ],
     ),
-    _WeekData('Week 4', 'Final preparation and conduction of the assessment.'),
+    _WeekData(
+      title: 'Week 4',
+      description:
+          'Final preparation, long-term portfolio building, and assessment.',
+      scheduleHeader: "What we'll Learn in the 4ᵗʰ week",
+      watermarkNumber: '04',
+      footerNote: '[ Work With Us – Special Seminar (Only for Students) ]',
+      scheduleTopics: [
+        _ScheduleTopic(
+          title: 'Trading & Investment in US Stock',
+          bulletPoints: [],
+        ),
+        _ScheduleTopic(title: 'Long-term Portfolio Building', bulletPoints: []),
+        _ScheduleTopic(
+          title: '1-on-1 Counselling & Individual Roadmap Allotment',
+          bulletPoints: [],
+        ),
+        _ScheduleTopic(
+          title: '(Government Bonds, Life term & Health insurance Suggestions)',
+          bulletPoints: [],
+        ),
+      ],
+    ),
   ];
 
   @override
@@ -467,7 +686,7 @@ class _RoadmapSection extends StatelessWidget {
         const SizedBox(height: 10),
         const Text(
           'The programme is structured across four weeks. Detailed '
-          'week-by-week curriculum will be announced shortly.',
+          'week-by-week curriculum is listed below.',
           style: TextStyle(
             color: AppColors.textMuted,
             fontSize: 15,
@@ -476,96 +695,605 @@ class _RoadmapSection extends StatelessWidget {
         ),
         const SizedBox(height: 28),
         for (int i = 0; i < weeks.length; i++)
-          _TimelineItem(
-            title: weeks[i].title,
-            description: weeks[i].description,
-            isLast: i == weeks.length - 1,
-          ),
+          _TimelineItem(week: weeks[i], isLast: i == weeks.length - 1),
+        const SizedBox(height: 12),
+        const _AdditionalBenefitsCard(),
       ],
     );
   }
 }
 
-class _TimelineItem extends StatelessWidget {
-  final String title;
-  final String description;
+class _TimelineItem extends StatefulWidget {
+  final _WeekData week;
   final bool isLast;
-  const _TimelineItem({
-    required this.title,
-    required this.description,
-    required this.isLast,
+
+  const _TimelineItem({required this.week, required this.isLast});
+
+  @override
+  State<_TimelineItem> createState() => _TimelineItemState();
+}
+
+class _TimelineItemState extends State<_TimelineItem> {
+  bool _isExpanded = false;
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasSchedule =
+        widget.week.scheduleTopics != null &&
+        widget.week.scheduleTopics!.isNotEmpty;
+
+    // Stack is sized by its one non-positioned child (the Row).
+    // The connector line is Positioned so it fills exactly that height — no
+    // IntrinsicHeight, no fake large heights, no extra clipping needed.
+    return Stack(
+      children: [
+        // ── Connector line (behind everything) ──────────────────────────
+        if (!widget.isLast)
+          Positioned(
+            left: 10, // horizontally centred in the 22-px dot column
+            top: 22, // starts right below the dot
+            bottom: 0,
+            child: Container(width: 2, color: AppColors.cardBorder),
+          ),
+
+        // ── Main content row ─────────────────────────────────────────────
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Dot
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: (hasSchedule && _isExpanded)
+                    ? AppColors.gold
+                    : Colors.transparent,
+                border: Border.all(color: AppColors.gold, width: 2),
+              ),
+              child: (hasSchedule && _isExpanded)
+                  ? const Icon(Icons.check, size: 13, color: Colors.black)
+                  : null,
+            ),
+            const SizedBox(width: 16),
+
+            // Content — Expanded so it takes all remaining width
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title + arrow
+                    InkWell(
+                      onTap: hasSchedule ? _toggleExpanded : null,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.week.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            if (hasSchedule)
+                              AnimatedRotation(
+                                turns: _isExpanded ? 0.5 : 0.0,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOutCubic,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: _isExpanded
+                                        ? AppColors.gold.withValues(alpha: 0.18)
+                                        : AppColors.cardBorder.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    color: _isExpanded
+                                        ? AppColors.gold
+                                        : AppColors.textMuted,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.week.description,
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Pill button
+                    if (hasSchedule)
+                      InkWell(
+                        onTap: _toggleExpanded,
+                        borderRadius: BorderRadius.circular(20),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _isExpanded
+                                ? AppColors.gold.withValues(alpha: 0.15)
+                                : AppColors.card,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _isExpanded
+                                  ? AppColors.gold
+                                  : AppColors.gold.withValues(alpha: 0.45),
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _isExpanded
+                                    ? 'Hide ${widget.week.title} Schedule'
+                                    : 'View ${widget.week.title} Schedule',
+                                style: const TextStyle(
+                                  color: AppColors.gold,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              AnimatedRotation(
+                                turns: _isExpanded ? 0.5 : 0.0,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOutCubic,
+                                child: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: AppColors.gold,
+                                  size: 18,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.cardBorder),
+                        ),
+                        child: const Text(
+                          'Detailed schedule coming soon',
+                          style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+
+                    // Schedule card — AnimatedSize smoothly expands/collapses.
+                    // No IntrinsicHeight anywhere → no layout thrash, no overflow.
+                    if (hasSchedule)
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 350),
+                        curve: Curves.easeInOutCubic,
+                        alignment: Alignment.topCenter,
+                        child: _isExpanded
+                            ? Padding(
+                                padding: const EdgeInsets.only(top: 14),
+                                child: _WeekScheduleCard(
+                                  header:
+                                      widget.week.scheduleHeader ??
+                                      "What we'll Learn in this week",
+                                  topics: widget.week.scheduleTopics!,
+                                  footerNote: widget.week.footerNote,
+                                  watermarkNumber: widget.week.watermarkNumber,
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _WeekScheduleCard extends StatelessWidget {
+  final String header;
+  final List<_ScheduleTopic> topics;
+  final String? footerNote;
+  final String? watermarkNumber;
+
+  const _WeekScheduleCard({
+    required this.header,
+    required this.topics,
+    this.footerNote,
+    this.watermarkNumber,
   });
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F1420),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.35),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: AppColors.gold.withValues(alpha: 0.05),
+            blurRadius: 20,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Stack(
         children: [
-          Column(
-            children: [
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.gold, width: 2),
+          // Background watermark number (like '01' / '02' / '03' / '04' in image)
+          if (watermarkNumber != null)
+            Positioned(
+              right: 10,
+              bottom: 4,
+              child: IgnorePointer(
+                child: Text(
+                  watermarkNumber!,
+                  style: TextStyle(
+                    fontSize: 96,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'sans-serif',
+                    color: Colors.white.withValues(alpha: 0.04),
+                    letterSpacing: -4,
+                    height: 0.9,
+                  ),
                 ),
               ),
-              if (!isLast)
-                Expanded(
-                  child: Container(width: 2, color: AppColors.cardBorder),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top yellow accent line
+              Container(
+                height: 3.5,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFFFFD54F),
+                      Color(0xFFE3A857),
+                      Color(0xFFFFD54F),
+                    ],
+                  ),
                 ),
+              ),
+              // Header text
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.gold,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        header,
+                        style: const TextStyle(
+                          color: AppColors.goldLight,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(color: Color(0xFF1E2638), height: 1, thickness: 1),
+              // Topics list
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (int i = 0; i < topics.length; i++) ...[
+                      if (i > 0) const SizedBox(height: 20),
+                      _TopicItem(topic: topics[i]),
+                    ],
+                    if (footerNote != null) ...[
+                      const SizedBox(height: 20),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.5),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          footerNote!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.goldLight,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 28),
-              child: Column(
+        ],
+      ),
+    );
+  }
+}
+
+class _AdditionalBenefitsCard extends StatelessWidget {
+  const _AdditionalBenefitsCard();
+
+  static const List<Map<String, dynamic>> benefits = [
+    {
+      'title': '1 Year Support',
+      'icon': Icons.verified_user_outlined,
+      'desc': 'Dedicated guidance, doubts clearing & regular mentorship.',
+    },
+    {
+      'title': 'Free Access to AI Trade Bot',
+      'icon': Icons.smart_toy_outlined,
+      'desc': 'Automated algorithmic trading setups & market indicators.',
+    },
+    {
+      'title': 'Access to Stock Archery App',
+      'icon': Icons.phone_android_rounded,
+      'desc': 'Community access, live market alerts & exclusive resources.',
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F1420),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.35),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: AppColors.gold.withValues(alpha: 0.05),
+            blurRadius: 18,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top yellow accent line
+          Container(
+            height: 3.5,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFFFD54F),
+                  Color(0xFFE3A857),
+                  Color(0xFFFFD54F),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Additional Benefits',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  width: 44,
+                  height: 3.5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7C948),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                for (int i = 0; i < benefits.length; i++) ...[
+                  if (i > 0)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      child: Divider(color: Color(0xFF1E2638), height: 1),
+                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Icon(
+                          benefits[i]['icon'] as IconData,
+                          color: AppColors.gold,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              benefits[i]['title'] as String,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              benefits[i]['desc'] as String,
+                              style: const TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 13,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopicItem extends StatelessWidget {
+  final _ScheduleTopic topic;
+
+  const _TopicItem({required this.topic});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title
+        Text(
+          topic.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Yellow underline accent bar
+        Container(
+          width: 36,
+          height: 3.5,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF7C948),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        if (topic.bulletPoints.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          for (final bullet in topic.bulletPoints)
+            Padding(
+              padding: const EdgeInsets.only(left: 2, bottom: 6),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                    margin: const EdgeInsets.only(top: 7, right: 10),
+                    width: 5,
+                    height: 5,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
                     ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: const Text(
-                      'Detailed schedule coming soon',
-                      style: TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 12,
+                  ),
+                  Expanded(
+                    child: Text(
+                      bullet,
+                      style: const TextStyle(
+                        color: Color(0xFFE2E8F0),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -595,12 +1323,18 @@ class _ScheduleFeeVenueSection extends StatelessWidget {
                 style: TextStyle(color: AppColors.textMuted, fontSize: 14),
               ),
               const SizedBox(height: 18),
-              const _TimingRow(label: 'Morning Session', value: '9:30 – 2:30'),
+              const _TimingRow(
+                label: 'Morning Session',
+                value: '9:30 am – 2:30 pm',
+              ),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 14),
                 child: Divider(color: AppColors.cardBorder, height: 1),
               ),
-              const _TimingRow(label: 'Evening Session', value: '3:30 – 5:30'),
+              const _TimingRow(
+                label: 'Evening Session',
+                value: '3:30 pm – 5:30 pm',
+              ),
             ],
           ),
         ),

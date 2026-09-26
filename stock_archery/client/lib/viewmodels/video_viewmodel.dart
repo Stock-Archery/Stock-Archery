@@ -8,8 +8,7 @@ final videoProvider = Provider<List<VideoModel>>((ref) {
       title: "Stock Option Buying strategy Part 1",
       videoId: "BKoWmDwlfnQ",
       thumbnail: "https://img.youtube.com/vi/BKoWmDwlfnQ/0.jpg",
-      description:
-          "Learn the fundamentals of option buying with real market examples.",
+      description: "What option buying is and how it works, explained simply.",
       category: "SOB",
     ),
     VideoModel(
@@ -17,7 +16,7 @@ final videoProvider = Provider<List<VideoModel>>((ref) {
       videoId: "MnopZVm7baM",
       thumbnail: "https://img.youtube.com/vi/MnopZVm7baM/0.jpg",
       description:
-          "Build advanced strategies for trading stock options in volatile markets.",
+          " How to tell when a stock is really breaking out, and which way it's likely to go.",
       category: "SOB",
     ),
     VideoModel(
@@ -29,11 +28,19 @@ final videoProvider = Provider<List<VideoModel>>((ref) {
       category: "SOB",
     ),
     VideoModel(
+      title: "Stock Option Buying strategy Part -4",
+      videoId: "gqaNgndQavA",
+      thumbnail: "https://img.youtube.com/vi/gqaNgndQavA/0.jpg",
+      description:
+          " A simple, step-by-step method for buying options at the right time.",
+      category: "SOB",
+    ),
+    VideoModel(
       title: "Intro of Free Classes",
       videoId: "seMb193jGCc",
       thumbnail: "https://img.youtube.com/vi/seMb193jGCc/0.jpg",
       description:
-          "Learn the fundamentals of option buying with real market examples.",
+          " Overview of the free trading course, what it covers, and what to expect.",
       category: "Free Classes",
     ),
     VideoModel(
@@ -41,7 +48,7 @@ final videoProvider = Provider<List<VideoModel>>((ref) {
       videoId: "o5J12_E9xaE",
       thumbnail: "https://img.youtube.com/vi/o5J12_E9xaE/0.jpg",
       description:
-          "Learn the fundamentals of candlestick anatomy and understand how to read candlestick patterns.",
+          " Basics of candlestick structure and how to read price action from them.",
       category: "Free Classes",
     ),
 
@@ -49,8 +56,7 @@ final videoProvider = Provider<List<VideoModel>>((ref) {
       title: "Risk Management",
       videoId: "10eEQhpC1Ko",
       thumbnail: "https://img.youtube.com/vi/10eEQhpC1Ko/0.jpg",
-      description:
-          "Learn the fundamentals of risk management and how to manage risk while trading.",
+      description: "How to protect capital and control losses while trading.",
       category: "Free Classes",
     ),
 
@@ -59,7 +65,7 @@ final videoProvider = Provider<List<VideoModel>>((ref) {
       videoId: "-_EKDOEd8GM",
       thumbnail: "https://img.youtube.com/vi/-_EKDOEd8GM/0.jpg",
       description:
-          "Learn the fundamentals of stock selection and how to identify suitable stocks for trading.",
+          "Criteria and process for picking the right stocks to trade.",
       category: "Free Classes",
     ),
 
@@ -68,7 +74,7 @@ final videoProvider = Provider<List<VideoModel>>((ref) {
       videoId: "xSlFZTAD3S8",
       thumbnail: "https://img.youtube.com/vi/xSlFZTAD3S8/0.jpg",
       description:
-          "Understand demand and supply and how they influence price movement in the market.",
+          "Understanding market zones where buying/selling pressure shifts price.",
       category: "Free Classes",
     ),
 
@@ -77,7 +83,7 @@ final videoProvider = Provider<List<VideoModel>>((ref) {
       videoId: "pjQqJ35oY6I",
       thumbnail: "https://img.youtube.com/vi/pjQqJ35oY6I/0.jpg",
       description:
-          "Understand trading trap psychology and how market participants can get caught in common traps.",
+          "Recognizing false breakouts/breakdowns and the psychology behind market traps.",
       category: "Free Classes",
     ),
 
@@ -86,7 +92,7 @@ final videoProvider = Provider<List<VideoModel>>((ref) {
       videoId: "GTWnB5PuQrI",
       thumbnail: "https://img.youtube.com/vi/GTWnB5PuQrI/0.jpg",
       description:
-          "Learn the fundamentals of intraday setups and how to identify trading opportunities.",
+          "Practical setup and strategy for executing intraday trades.",
       category: "Free Classes",
     ),
   ];
