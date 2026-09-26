@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io' show Platform;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -29,7 +30,8 @@ class MainNavigationScreen extends ConsumerWidget {
     // Premium badge must reflect BOTH the RevenueCat entitlement and the
     // backend `isPremium` flag — admin-granted premium (set directly in
     // MongoDB, no RevenueCat purchase) was previously invisible here.
-    final isPremium = ref.watch(premiumProvider).superPremium || (user?.isPremium ?? false);
+    final isPremium =
+        ref.watch(premiumProvider).superPremium || (user?.isPremium ?? false);
 
     final List<Widget> screens = [
       const VideoListView(),
@@ -101,21 +103,22 @@ class MainNavigationScreen extends ConsumerWidget {
                 title: 'Settings',
                 onTap: () {
                   Navigator.pop(context);
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const SettingsView(),
-    ),
-  );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsView()),
+                  );
                 },
               ),
               const SizedBox(height: AppSpacing.sm),
               _DrawerActionTile(
                 icon: Icons.support_agent_outlined,
                 title: 'Support',
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
-                  // TODO: support callback
+                  final uri = Uri.parse('https://forms.gle/bV32M7wG4WWLad5z5');
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
                 },
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -233,7 +236,7 @@ class MainNavigationScreen extends ConsumerWidget {
                 padding: EdgeInsets.only(bottom: 3),
                 child: Icon(Icons.school, size: 24),
               ),
-              label: 'Classes',
+              label: 'Bootcamp',
             ),
           ],
         ),

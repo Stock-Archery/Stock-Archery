@@ -12,7 +12,7 @@ class AppLinks {
       'https://www.google.com/maps?client=ms-android-motorola-rvo3&hs=JXfq&sca_esv=de9039c1853f1b8f&hl=en-IN&cs=1&sxsrf=APpeQnvN8Pj2-yS-zFp7aL8Y9uCw6ZQSiw:1789928664884&kgmid=/g/11pf1vn1wy&shem=epsd1,ltae,rimspwouoe&shndl=30&kgs=29f668bc24c05ac9&um=1&ie=UTF-8&fb=1&gl=in&sa=X&geocode=KY18R0OuN_A5MdpkFrqYZIuj&daddr=Manik+sarkar+chowk,+near+Babulal+sweets,+bgp,+Adampur,+Bhagalpur,+Shanker+Pur,+Bihar+812001';
 
   static const String registrationFormUrl =
-      'https://docs.google.com/forms/d/e/1FAIpQLSeHZjDCy0DveuYNpJ1sSIYDs8eB-NLN6GLDI8OL5sR2-dygTw/viewform';
+      'https://forms.gle/XKTcTx4Kg68MrP1aA';
 }
 
 class TradingClassApp extends StatelessWidget {
@@ -307,7 +307,7 @@ class _HeroSection extends StatelessWidget {
               fontFamily: 'serif',
             ),
             children: [
-              TextSpan(text: 'Join Bihar\'s Premium '),
+              TextSpan(text: 'Join Bihar\'s First '),
               TextSpan(
                 text: 'Trading Floor',
                 style: TextStyle(

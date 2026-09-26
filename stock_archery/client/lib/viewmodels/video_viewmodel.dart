@@ -29,8 +29,8 @@ final videoProvider = Provider<List<VideoModel>>((ref) {
     ),
     VideoModel(
       title: "Stock Option Buying strategy Part -4",
-      videoId: "gqaNgndQavA",
-      thumbnail: "https://img.youtube.com/vi/gqaNgndQavA/0.jpg",
+      videoId: "hYXS1XsnrNI",
+      thumbnail: "https://img.youtube.com/vi/hYXS1XsnrNI/0.jpg",
       description:
           " A simple, step-by-step method for buying options at the right time.",
       category: "SOB",
