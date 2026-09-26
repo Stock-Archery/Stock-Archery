@@ -682,7 +682,7 @@ class SettingsView extends ConsumerWidget {
   Widget _buildSupportTile(BuildContext context) {
     return InkWell(
       onTap: () async {
-        final uri = Uri.parse('https://stockarchery-privacy.netlify.app/');
+        final uri = Uri.parse('https://forms.gle/bV32M7wG4WWLad5z5');
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         }

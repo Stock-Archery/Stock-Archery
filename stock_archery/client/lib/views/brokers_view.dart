@@ -86,7 +86,7 @@ class _BrokersViewState extends State<BrokersView> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () =>
-                      _launchUrl("https://forms.gle/dKjcY2FPy534AC2o7"),
+                      _launchUrl("https://forms.gle/EocK8JnmHQvHTZUo8"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.goldBright,
                     foregroundColor: AppColors.onPrimary,
@@ -203,6 +203,8 @@ class _BrokersViewState extends State<BrokersView> {
                   isWide: false,
                   onTap: () =>
                       _launchUrl("https://mudrex.com/?referral_code=P5E1RM42"),
+                  onVerifyTap: () =>
+                      _launchUrl("https://forms.gle/2Q6d7e9498XYdstz6"),
                 ),
               ] else if (_selectedCategory == 'XAUD') ...[
                 _buildBrokerCard(
@@ -215,35 +217,35 @@ class _BrokersViewState extends State<BrokersView> {
                   isWide: true,
                   onTap: () => _launchUrl("https://affs.click/kv3W7"),
                   onVerifyTap: () =>
-                      _launchUrl("https://forms.gle/dKjcY2FPy534AC2o7"),
+                      _launchUrl("https://forms.gle/XHA1hCPeH97pdgyu7"),
                 ),
-                _buildBrokerCard(
-                  name: "Angel One",
-                  logoAsset: "assets/logos/angelone.png",
-                  description: "Intelligent trading with ARQ Prime advisory.",
-                  color: const Color(0xFF3B82F6),
-                  isPopular: false,
-                  isWide: true,
-                  onTap: () => _showComingSoon(context, "Angel One"),
-                ),
-                _buildBrokerCard(
-                  name: "Dhan",
-                  logoAsset: "assets/logos/dhan.jpeg",
-                  description: "Lighting fast trading experience for pros.",
-                  color: const Color(0xFF22C55E),
-                  isPopular: false,
-                  isWide: false,
-                  onTap: () => _showComingSoon(context, "Dhan"),
-                ),
-                _buildBrokerCard(
-                  name: "Upstox",
-                  logoAsset: "assets/logos/upstox.jpeg",
-                  description: "Reliable platform with advanced analytics.",
-                  color: const Color(0xFF9333EA),
-                  isPopular: false,
-                  isWide: false,
-                  onTap: () => _showComingSoon(context, "Upstox"),
-                ),
+                // _buildBrokerCard(
+                //   name: "Angel One",
+                //   logoAsset: "assets/logos/angelone.png",
+                //   description: "Intelligent trading with ARQ Prime advisory.",
+                //   color: const Color(0xFF3B82F6),
+                //   isPopular: false,
+                //   isWide: true,
+                //   onTap: () => _showComingSoon(context, "Angel One"),
+                // ),
+                // _buildBrokerCard(
+                //   name: "Dhan",
+                //   logoAsset: "assets/logos/dhan.jpeg",
+                //   description: "Lighting fast trading experience for pros.",
+                //   color: const Color(0xFF22C55E),
+                //   isPopular: false,
+                //   isWide: false,
+                //   onTap: () => _showComingSoon(context, "Dhan"),
+                // ),
+                // _buildBrokerCard(
+                //   name: "Upstox",
+                //   logoAsset: "assets/logos/upstox.jpeg",
+                //   description: "Reliable platform with advanced analytics.",
+                //   color: const Color(0xFF9333EA),
+                //   isPopular: false,
+                //   isWide: false,
+                //   onTap: () => _showComingSoon(context, "Upstox"),
+                // ),
               ],
 
               const SizedBox(height: 24),
@@ -520,7 +522,7 @@ class _BrokersViewState extends State<BrokersView> {
           ),
           const SizedBox(height: 20),
           OutlinedButton(
-            onPressed: () {},
+            onPressed: () => _launchUrl('https://forms.gle/bV32M7wG4WWLad5z5'),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: AppColors.metallicGold, width: 1),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
