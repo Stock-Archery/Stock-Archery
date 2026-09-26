@@ -284,7 +284,8 @@ exports.chat = async (req, res) => {
                 textChatCountDate: todayKey,
               },
             },
-          ]
+          ],
+          { updatePipeline: true }
         );
       }
 
