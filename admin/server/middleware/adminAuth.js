@@ -5,7 +5,7 @@ import crypto from "crypto";
 // carries an issued-at and expiry, so a leaked token stops working on its
 // own without needing a server-side revocation list.
 const SECRET = process.env.ADMIN_PANEL_SECRET;
-const TOKEN_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 function sign(payloadB64) {
   return crypto.createHmac("sha256", SECRET).update(payloadB64).digest("hex");
