@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import alertRoutes from "./routes/alertRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import broadcastRoutes from "./routes/broadcastRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import { initFirebase } from "./config/firebase.js";
 
 dotenv.config();
@@ -24,6 +25,7 @@ initFirebase();
 app.use("/alerts", alertRoutes);
 app.use("/users", userRoutes);
 app.use("/broadcast", broadcastRoutes);
+app.use("/admin", adminRoutes);
 
 const startedAt = new Date().toISOString();
 const lastUpdated = new Date().toISOString();
@@ -142,5 +144,5 @@ app.post("/refresh-fno", async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`[log] Server running on http://localhost:${PORT}`);
-    console.log(`[log] Routes: /alerts, /users, /broadcast`);
+    console.log(`[log] Routes: /alerts, /users, /broadcast, /admin`);
 });
