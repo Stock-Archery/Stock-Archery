@@ -299,8 +299,8 @@ final Map<String, VideoModel> _categoryIntroVideos = {
   ),
   'Crypto': VideoModel(
     title: 'About Crypto Alerts',
-    videoId: 'bDLYO5D7RoE',
-    thumbnail: 'https://img.youtube.com/vi/bDLYO5D7RoE/0.jpg',
+    videoId: 'Fuc0AFKYDTc',
+    thumbnail: 'https://img.youtube.com/vi/Fuc0AFKYDTc/0.jpg',
     description: 'Learn how to use Crypto alerts for digital asset trading.',
     category: "pop-up",
   ),
@@ -326,8 +326,8 @@ final Map<String, VideoModel> _categoryFreeAccessVideos = {
   'Crypto': VideoModel(
     title: 'How to get free Crypto Alerts',
     videoId:
-        'bDLYO5D7RoE', // Replace with user's specific video ID if different
-    thumbnail: 'https://img.youtube.com/vi/bDLYO5D7RoE/0.jpg',
+        'BkBlamixSMU', // Replace with user's specific video ID if different
+    thumbnail: 'https://img.youtube.com/vi/BkBlamixSMU/0.jpg',
     description: 'Learn how to get free access to Crypto alerts.',
     category: "pop-up",
   ),
@@ -525,7 +525,9 @@ class _AlertImage extends StatelessWidget {
             child: Center(
               child: CircularProgressIndicator(
                 color: AppColors.goldBright,
-                value: total != null ? progress.cumulativeBytesLoaded / total : null,
+                value: total != null
+                    ? progress.cumulativeBytesLoaded / total
+                    : null,
               ),
             ),
           );
@@ -536,11 +538,18 @@ class _AlertImage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.broken_image_outlined, color: AppColors.subtleGrey, size: 32),
+                Icon(
+                  Icons.broken_image_outlined,
+                  color: AppColors.subtleGrey,
+                  size: 32,
+                ),
                 const SizedBox(height: 6),
                 Text(
                   'Image unavailable',
-                  style: GoogleFonts.inter(color: AppColors.subtleGrey, fontSize: 12),
+                  style: GoogleFonts.inter(
+                    color: AppColors.subtleGrey,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -564,7 +573,11 @@ class _FullScreenImage extends StatelessWidget {
   final String? imageBase64;
   final String title;
 
-  const _FullScreenImage({this.imageUrl, this.imageBase64, required this.title});
+  const _FullScreenImage({
+    this.imageUrl,
+    this.imageBase64,
+    required this.title,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -596,7 +609,9 @@ class _FullScreenImage extends StatelessWidget {
                   loadingBuilder: (context, child, progress) => progress == null
                       ? child
                       : const Center(
-                          child: CircularProgressIndicator(color: AppColors.goldBright),
+                          child: CircularProgressIndicator(
+                            color: AppColors.goldBright,
+                          ),
                         ),
                   errorBuilder: (context, error, stack) => const Icon(
                     Icons.broken_image_outlined,
