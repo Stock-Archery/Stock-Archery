@@ -2,6 +2,8 @@ import 'package:client/models/video_model.dart';
 import 'package:client/views/video_player_screen.dart';
 import 'package:client/viewmodels/video_viewmodel.dart';
 import 'package:client/viewmodels/auth_viewmodel.dart';
+import 'package:client/Features/payment/view_model/premium_provider.dart';
+import 'package:client/views/subscription_view.dart';
 import 'package:client/utils/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,7 +23,8 @@ class _VideoListViewState extends ConsumerState<VideoListView> {
   Widget build(BuildContext context) {
     final videos = ref.watch(videoProvider);
     final user = ref.watch(authProvider).user;
-    final isPremium = user?.isPremium ?? false;
+    final isPremium =
+        ref.watch(premiumProvider).superPremium || (user?.isPremium ?? false);
 
     return Scaffold(
       backgroundColor: AppColors.deepObsidian,
@@ -128,6 +131,28 @@ class _VideoListViewState extends ConsumerState<VideoListView> {
     final categoryVideos =
         videos.where((v) => v.category == _selectedTab).toList();
 
+    // Lock SOB strategy videos for non-premium users
+    if (_selectedTab == 'SOB' && !isPremium) {
+      return ListView(
+        padding: const EdgeInsets.only(top: 8),
+        children: [
+          _PremiumLockedCard(
+            isPremium: false,
+            category: 'SOB',
+            onUpgradeTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SubscriptionView(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 40),
+        ],
+      );
+    }
+
     if (categoryVideos.isNotEmpty) {
       return ListView(
         padding: const EdgeInsets.only(top: 8),
@@ -147,8 +172,19 @@ class _VideoListViewState extends ConsumerState<VideoListView> {
               },
             );
           }),
-          if (_selectedTab == 'Free Classes')
-            _PremiumLockedCard(isPremium: isPremium),
+          if (_selectedTab == 'Free Classes' && !isPremium)
+            _PremiumLockedCard(
+              isPremium: false,
+              category: 'SOB & Premium',
+              onUpgradeTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SubscriptionView(),
+                  ),
+                );
+              },
+            ),
           const SizedBox(height: 40),
         ],
       );
@@ -269,7 +305,7 @@ class _VideoCard extends StatelessWidget {
           color: AppColors.pureBlack,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.subtleGrey.withOpacity(0.12),
+            color: AppColors.subtleGrey.withValues(alpha: 0.12),
             width: 1,
           ),
         ),
@@ -314,7 +350,7 @@ class _VideoCard extends StatelessWidget {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.6),
+                            Colors.black.withValues(alpha: 0.6),
                           ],
                         ),
                       ),
@@ -325,10 +361,10 @@ class _VideoCard extends StatelessWidget {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: AppColors.metallicGold.withOpacity(0.20),
+                      color: AppColors.metallicGold.withValues(alpha: 0.20),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.metallicGold.withOpacity(0.70),
+                        color: AppColors.metallicGold.withValues(alpha: 0.70),
                         width: 1.5,
                       ),
                     ),
@@ -348,7 +384,7 @@ class _VideoCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.75),
+                        color: Colors.black.withValues(alpha: 0.75),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -449,17 +485,28 @@ class _VideoCard extends StatelessWidget {
 // ── Premium Locked Card ────────────────────────────────────────────────────
 class _PremiumLockedCard extends StatelessWidget {
   final bool isPremium;
-  const _PremiumLockedCard({required this.isPremium});
+  final String? category;
+  final VoidCallback? onUpgradeTap;
+
+  const _PremiumLockedCard({
+    required this.isPremium,
+    this.category,
+    this.onUpgradeTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final title = category != null
+        ? '$category Strategy Videos'
+        : 'Advanced Strategy Videos';
+
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       decoration: BoxDecoration(
         color: AppColors.pureBlack,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.metallicGold.withOpacity(0.25),
+          color: AppColors.metallicGold.withValues(alpha: 0.25),
           width: 1,
         ),
       ),
@@ -472,10 +519,10 @@ class _PremiumLockedCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.metallicGold.withOpacity(0.15),
+                color: AppColors.metallicGold.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppColors.metallicGold.withOpacity(0.40),
+                  color: AppColors.metallicGold.withValues(alpha: 0.40),
                   width: 1,
                 ),
               ),
@@ -489,7 +536,7 @@ class _PremiumLockedCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    'PREMIUM',
+                    'PREMIUM EXCLUSIVE',
                     style: GoogleFonts.inter(
                       color: AppColors.premiumAmber,
                       fontSize: 11,
@@ -512,10 +559,10 @@ class _PremiumLockedCard extends StatelessWidget {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: AppColors.metallicGold.withOpacity(0.10),
+                      color: AppColors.metallicGold.withValues(alpha: 0.10),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.metallicGold.withOpacity(0.35),
+                        color: AppColors.metallicGold.withValues(alpha: 0.35),
                         width: 1.5,
                       ),
                     ),
@@ -527,10 +574,10 @@ class _PremiumLockedCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Upgrade to Premium to Unlock',
+                    isPremium ? 'Premium Active' : 'Upgrade to Premium to Unlock',
                     style: GoogleFonts.inter(
                       color: AppColors.premiumAmber,
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -543,7 +590,7 @@ class _PremiumLockedCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
             child: Text(
-              'Advanced Gamma Squeeze Indicators',
+              title,
               style: GoogleFonts.montserrat(
                 color: AppColors.onSurface,
                 fontSize: 16,
@@ -563,7 +610,7 @@ class _PremiumLockedCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 5),
                 Text(
-                  'Premium Exclusive • 45 mins',
+                  'Exclusive Strategy Content • Full Access',
                   style: GoogleFonts.inter(
                     color: AppColors.subtleGrey,
                     fontSize: 12,
@@ -577,13 +624,11 @@ class _PremiumLockedCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
             child: ElevatedButton(
-              onPressed: isPremium ? null : () {},
+              onPressed: isPremium ? null : onUpgradeTap,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.metallicGold,
                 foregroundColor: const Color(0xFF0B0E11),
-                disabledBackgroundColor: AppColors.metallicGold.withOpacity(
-                  0.4,
-                ),
+                disabledBackgroundColor: AppColors.metallicGold.withValues(alpha: 0.4),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -592,7 +637,7 @@ class _PremiumLockedCard extends StatelessWidget {
                 elevation: 0,
               ),
               child: Text(
-                isPremium ? 'ALREADY PREMIUM' : 'UPGRADE NOW',
+                isPremium ? 'ALREADY PREMIUM' : 'UPGRADE NOW TO UNLOCK',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
