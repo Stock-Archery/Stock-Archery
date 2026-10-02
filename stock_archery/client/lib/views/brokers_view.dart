@@ -91,7 +91,7 @@ class _BrokersViewState extends State<BrokersView> {
                     backgroundColor: AppColors.goldBright,
                     foregroundColor: AppColors.onPrimary,
                     elevation: 4,
-                    shadowColor: AppColors.goldBright.withOpacity(0.4),
+                    shadowColor: AppColors.goldBright.withValues(alpha: 0.4),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -313,10 +313,10 @@ class _BrokersViewState extends State<BrokersView> {
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.pureBlack.withOpacity(0.3),
+            color: AppColors.pureBlack.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppColors.subtleGrey.withOpacity(0.1),
+              color: AppColors.subtleGrey.withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -342,7 +342,7 @@ class _BrokersViewState extends State<BrokersView> {
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface.withOpacity(0.9),
+                  color: AppColors.onSurface.withValues(alpha: 0.9),
                 ),
               ),
               const SizedBox(height: 4),
@@ -380,7 +380,7 @@ class _BrokersViewState extends State<BrokersView> {
         color: AppColors.pureBlack,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.subtleGrey.withOpacity(0.15),
+          color: AppColors.subtleGrey.withValues(alpha: 0.15),
           width: 1,
         ),
       ),
@@ -506,10 +506,10 @@ class _BrokersViewState extends State<BrokersView> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.pureBlack.withOpacity(0.4),
+        color: AppColors.pureBlack.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.subtleGrey.withOpacity(0.1),
+          color: AppColors.subtleGrey.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
