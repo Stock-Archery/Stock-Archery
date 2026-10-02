@@ -179,6 +179,20 @@ class _BrokersViewState extends State<BrokersView> {
                   onVerifyTap: () =>
                       _launchUrl("https://forms.gle/M9pksV9eWH2sjqPB6"),
                 ),
+                _buildBrokerCard(
+                  name: "AliceBlue",
+                  logoAsset: "assets/logos/alice_blue.jpeg",
+                  description:
+                      "Advanced trading platform with low brokerage & powerful tools.",
+                  color: const Color(0xFF0052CC),
+                  isPopular: false,
+                  isWide: false,
+                  onTap: () => _launchUrl(
+                    "https://ekyc.aliceblueonline.com/?source=EPAT2609",
+                  ),
+                  onVerifyTap: () =>
+                      _launchUrl("https://forms.gle/M9pksV9eWH2sjqPB6"),
+                ),
               ] else if (_selectedCategory == 'Crypto') ...[
                 _buildBrokerCard(
                   name: "CoinDCX",
