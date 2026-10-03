@@ -13,7 +13,23 @@ import { initFirebase } from "./config/firebase.js";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+// Allow the Vercel-hosted admin panel (and localhost for local dev).
+// Set ADMIN_PANEL_ORIGIN in .env to your Vercel URL, e.g.:
+//   ADMIN_PANEL_ORIGIN=https://stock-archery-admin.vercel.app
+const ALLOWED_ORIGINS = new Set([
+  "http://localhost:5174",
+  "http://localhost:3000",
+  ...(process.env.ADMIN_PANEL_ORIGIN ? [process.env.ADMIN_PANEL_ORIGIN.trim()] : []),
+]);
+
+app.use(cors({
+  origin: (origin, cb) => {
+    // Allow server-to-server / curl calls (no Origin header) and listed origins.
+    if (!origin || ALLOWED_ORIGINS.has(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: false,
+}));
 app.use(express.json({ limit: '50mb' }));
 
 const PORT = process.env.PORT || 3000;
