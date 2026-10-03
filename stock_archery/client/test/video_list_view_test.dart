@@ -77,7 +77,14 @@ void main() {
 
       // Verify free class video title is displayed
       expect(find.text('Intro of Free Classes'), findsOneWidget);
-      // Verify locked card teaser is visible at bottom of free classes for free user
+
+      // Scroll down in list view to reveal bottom teaser card for free user
+      await tester.scrollUntilVisible(
+        find.text('Upgrade to Premium to Unlock'),
+        500,
+        scrollable: find.byType(Scrollable).first,
+      );
+
       expect(find.text('Upgrade to Premium to Unlock'), findsOneWidget);
     });
 
